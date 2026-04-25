@@ -42,4 +42,4 @@ Un mix di competenze trasversali per coprire ogni aspetto dello sviluppo:
 ---
 
 ### 📌 Contatti & Link
-- 📧 [Contatto](mailto:ma non voglio il solito logo CBM-Solutions@proton.me)
+- 📧 [Contatto](CBM-Solutions@proton.me)
