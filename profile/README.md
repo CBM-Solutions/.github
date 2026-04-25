@@ -1,4 +1,6 @@
-<img width="1211" height="542" alt="CBM_Logo" src="https://github.com/user-attachments/assets/41822716-98a6-4c65-aafc-575ac8759a74" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/22dba926-5ea5-4ffa-ba1d-32697d713c10" alt="CBM_Logo" width="300" />
+</p>
 
 # 🚀 CBM-Solutions
 **Benvenuti nella nostra centrale operativa**
