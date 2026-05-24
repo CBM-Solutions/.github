@@ -1,0 +1,6 @@
+{
+  "name": "Agent Fix (Claude)",
+  "description": "Esegue Claude Code quando una issue riceve l'etichetta agent:fix.",
+  "iconName": "octicon-issue-opened",
+  "categories": ["Automation"]
+}
