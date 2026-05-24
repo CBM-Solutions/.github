@@ -1,0 +1,26 @@
+name: Agent Fix
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  fix:
+    if: github.event.label.name == 'agent:fix'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            ISSUE #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+
+            ${{ github.event.issue.body }}
+
+            Risolvi questa issue: crea un branch, applica le modifiche,
+            apri una PR verso il branch di default e commenta la issue con il link.
