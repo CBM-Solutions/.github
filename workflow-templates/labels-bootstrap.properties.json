@@ -1,0 +1,6 @@
+{
+  "name": "Bootstrap Agent Labels",
+  "description": "Sincronizza le etichette agent:* leggendo .github/labels.yml.",
+  "iconName": "octicon-tag",
+  "categories": ["Automation"]
+}

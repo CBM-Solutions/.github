@@ -1,0 +1,6 @@
+{
+  "name": "Agent Test (Claude)",
+  "description": "Genera o sistema i test quando una issue riceve l'etichetta agent:test.",
+  "iconName": "octicon-beaker",
+  "categories": ["Automation"]
+}

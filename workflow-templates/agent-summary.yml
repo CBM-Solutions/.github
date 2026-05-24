@@ -1,0 +1,37 @@
+name: Agent Summary
+on:
+  issues:
+    types: [labeled]
+  pull_request:
+    types: [labeled]
+
+jobs:
+  run:
+    if: github.event.label.name == 'agent:summary'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            EVENTO: ${{ github.event_name }}
+            PR #${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}
+            ISSUE #${{ github.event.issue.number }} ${{ github.event.issue.title }}
+
+            Produci un TL;DR mobile-friendly (3-5 bullet, max ~80 caratteri per bullet)
+            dell'oggetto etichettato, pensato per essere letto al volo da telefono
+            prima di decidere come procedere manualmente. Includi:
+            - di cosa si tratta in una frase
+            - punti chiave / decisioni richieste
+            - eventuali rischi o blocchi evidenti
+
+            Output: un singolo commento sull'oggetto etichettato. Nessuna PR,
+            nessuna modifica al codice, nessuna analisi profonda.

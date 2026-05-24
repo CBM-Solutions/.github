@@ -1,0 +1,38 @@
+name: Task per agente Claude
+description: Apri un task che verrà eseguito da un agente Claude tramite etichetta
+title: "[agent] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Dopo aver creato la issue, applica l'etichetta `agent:<nome>` corrispondente
+        all'agente che vuoi attivare. Solo chi ha permessi di scrittura sul repo
+        può etichettare e quindi triggerare l'esecuzione.
+  - type: dropdown
+    id: agent
+    attributes:
+      label: Agente
+      description: Quale agente deve gestire questo task
+      options:
+        - fix
+        - review
+        - docs
+        - test
+        - refactor
+        - summary
+    validations:
+      required: true
+  - type: textarea
+    id: contesto
+    attributes:
+      label: Contesto e obiettivo
+      description: Cosa va fatto, in quale area del codice, vincoli noti.
+    validations:
+      required: true
+  - type: textarea
+    id: accettazione
+    attributes:
+      label: Criteri di accettazione
+      description: Come riconosciamo che il task è completo (test, comportamento osservabile, file toccati).
+    validations:
+      required: false

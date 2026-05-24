@@ -1,0 +1,6 @@
+{
+  "name": "Agent Review (Claude)",
+  "description": "Code review automatica quando una PR o issue riceve l'etichetta agent:review.",
+  "iconName": "octicon-checklist",
+  "categories": ["Automation"]
+}

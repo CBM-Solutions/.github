@@ -1,0 +1,6 @@
+{
+  "name": "Agent Summary (Claude)",
+  "description": "TL;DR mobile-friendly quando una issue o PR riceve l'etichetta agent:summary.",
+  "iconName": "octicon-eye",
+  "categories": ["Automation"]
+}

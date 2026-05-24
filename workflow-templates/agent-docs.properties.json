@@ -1,0 +1,6 @@
+{
+  "name": "Agent Docs (Claude)",
+  "description": "Aggiorna la documentazione quando una issue riceve l'etichetta agent:docs.",
+  "iconName": "octicon-book",
+  "categories": ["Automation"]
+}

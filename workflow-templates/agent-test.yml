@@ -1,0 +1,31 @@
+name: Agent Test
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  run:
+    if: github.event.label.name == 'agent:test'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            ISSUE #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+
+            ${{ github.event.issue.body }}
+
+            Genera o sistema i test per l'area indicata nella issue:
+            1. Identifica il framework di test del repo (package.json, pyproject, ecc.).
+            2. Aggiungi/aggiorna i test mantenendo lo stile esistente.
+            3. Verifica che la suite passi in locale prima di aprire la PR.
+            4. Apri una PR "test:" e commenta la issue con il link.
+            Non modificare il codice di produzione se non strettamente necessario
+            per rendere i test eseguibili.

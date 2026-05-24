@@ -1,11 +1,11 @@
-name: Agent Fix
+name: Agent Docs
 on:
   issues:
     types: [labeled]
 
 jobs:
   run:
-    if: github.event.label.name == 'agent:fix'
+    if: github.event.label.name == 'agent:docs'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -22,9 +22,10 @@ jobs:
 
             ${{ github.event.issue.body }}
 
-            Risolvi questa issue in autonomia:
-            1. Crea un branch dedicato (es. agent/fix-<numero-issue>).
-            2. Applica le modifiche minime necessarie a risolvere il problema.
-            3. Apri una Pull Request verso il branch di default con descrizione chiara.
+            Aggiorna la documentazione (README, /docs, commenti di alto livello)
+            in base al contesto della issue:
+            1. Identifica i file di documentazione rilevanti.
+            2. Applica modifiche chiare, senza alterare la logica del codice.
+            3. Apri una PR "docs:" verso il branch di default.
             4. Commenta la issue con il link alla PR.
-            Mantieni lo scope ristretto: niente refactor non richiesti.
+            Non scrivere documentazione speculativa: solo ciò che la issue richiede.

@@ -43,5 +43,22 @@ Un mix di competenze trasversali per coprire ogni aspetto dello sviluppo:
 
 ---
 
+## 🤖 Agenti Claude (via etichette)
+
+Ogni repo della org può adottare i workflow template di questa centrale per attivare agenti Claude Code applicando un'etichetta a issue/PR. Esecuzione su runner GitHub effimeri, autenticazione tramite abbonamento Claude Max.
+
+| Etichetta | Cosa fa |
+|---|---|
+| `agent:fix` | Apre una PR che risolve la issue |
+| `agent:review` | Code review strutturata su PR o issue |
+| `agent:docs` | Aggiorna README e documentazione |
+| `agent:test` | Genera o sistema i test |
+| `agent:refactor` | Refactoring mirato preservando il comportamento |
+| `agent:summary` | TL;DR mobile-friendly (read-only) |
+
+Setup su un nuovo repo: adottare gli starter workflow dal picker Actions, eseguire una volta `Bootstrap Agent Labels`, aggiungere il secret `CLAUDE_CODE_OAUTH_TOKEN`.
+
+---
+
 ### 📌 Contatti & Link
 - 📧 [Contatto](CBM-Solutions@proton.me)

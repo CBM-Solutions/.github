@@ -1,0 +1,6 @@
+{
+  "name": "Agent Refactor (Claude)",
+  "description": "Refactoring mirato quando una issue riceve l'etichetta agent:refactor.",
+  "iconName": "octicon-tools",
+  "categories": ["Automation"]
+}
