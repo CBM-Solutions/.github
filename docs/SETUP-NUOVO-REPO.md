@@ -1,0 +1,105 @@
+# Setup agenti su un nuovo repo — checklist
+
+Tempo richiesto: **~10 minuti** se hai già i token a portata di mano.
+
+## Prerequisiti
+
+- Repo creato sotto org `CBM-Solutions`
+- App GitHub **Claude** già installata sull'org (verifica su https://github.com/organizations/CBM-Solutions/settings/installations — se non c'è installala da https://github.com/apps/claude)
+- Hai i seguenti token pronti:
+  - `sk-ant-oat01-...` (genera con `claude setup-token`)
+  - PAT GitHub fine-grained con scope **Projects: Read and write** sull'org
+  - Bot Telegram token + chat_id del gruppo notifiche
+
+---
+
+## Step 1 — Adottare gli starter workflow
+
+1. Apri il tuo repo → tab **Actions**.
+2. Click **"New workflow"** → in alto trovi la categoria **"Workflows created by CBM-Solutions"**.
+3. Adotta in quest'ordine, uno alla volta (ogni adozione crea un commit):
+   1. **Bootstrap Agent Labels** — crea le 6 label `agent:*`
+   2. **Agent Summary** (read-only, il più sicuro per primo test)
+   3. **Agent Fix**
+   4. **Agent Review**
+   5. **Agent Docs**
+   6. **Agent Test**
+   7. **Agent Refactor**
+   8. **Notify Agent Failure (Telegram)**
+
+Suggerimento: se sai già che non userai mai certi agenti su questo repo, saltali — sempre adottabili in seguito.
+
+---
+
+## Step 2 — Caricare i secret
+
+Vai su **Settings → Secrets and variables → Actions → New repository secret** e crea questi 4 secret:
+
+| Nome | Valore |
+|---|---|
+| `CLAUDE_CODE_OAUTH_TOKEN` | Il tuo `sk-ant-oat01-...` |
+| `MASTER_BOARD_TOKEN` | PAT con permission `Projects: Read and write` |
+| `TELEGRAM_BOT_TOKEN` | Token del bot (`123456:ABC...`) |
+| `TELEGRAM_CHAT_ID` | ID numerico del gruppo (es. `-100123456789`) |
+
+> Se ne carichi solo alcuni: gli step relativi falliscono con warning ma il workflow agente nel complesso resta funzionante (tutti gli step di integrazione hanno `continue-on-error: true`).
+
+---
+
+## Step 3 — Eseguire il bootstrap label
+
+1. **Actions → Bootstrap Agent Labels → Run workflow → Run**.
+2. Attendi che termini (10-20 secondi).
+3. Verifica su **Issues → Labels** che ci siano 6 nuove label colorate `agent:fix`, `agent:review`, ecc.
+
+---
+
+## Step 4 — Smoke test
+
+1. Apri una issue di prova (puoi usare il template **"Task per agente Claude"**).
+2. Applicale l'etichetta `agent:summary` (la più sicura — read-only).
+3. Aspetta ~60 secondi. Verifica:
+   - L'app GitHub **Actions** mostra un run "Agent Summary" in successo
+   - La issue ha un nuovo commento da `claude[bot]` con TL;DR
+   - La issue è apparsa nel [Master Board](https://github.com/orgs/CBM-Solutions/projects/4)
+
+Se non funziona, vai a [`AGENTI.md#troubleshooting`](AGENTI.md) o controlla i log con `gh run view --log`.
+
+---
+
+## Step 5 — Notifica Telegram (test opzionale)
+
+Per verificare l'alert:
+
+1. **Rimuovi temporaneamente** il secret `CLAUDE_CODE_OAUTH_TOKEN`.
+2. Riapplica l'etichetta `agent:summary` a una issue.
+3. Il workflow fallisce. Nel gruppo Telegram dovresti vedere:
+   > 🔴 *Agent Summary* failed
+   > *Repo:* `CBM-Solutions/<repo>`
+
+4. **Ripristina il secret** subito dopo.
+
+---
+
+## Branch protection consigliata
+
+Per i repo dove gli agenti aprono PR, configura su `main`:
+
+- **Settings → Branches → Add rule** per `main`
+- ✅ Require a pull request before merging
+- ✅ Require approvals: 1 (il reviewer auto-assegnato)
+- ✅ Require status checks (se hai CI)
+- ❌ NON serve "Restrict who can push" — l'agente apre PR, non pusha su `main`
+
+Senza branch protection l'agente potrebbe in teoria mergiare da solo se gli concedi i permessi; con la protezione, anche se prova, viene bloccato.
+
+---
+
+## Disattivazione
+
+Per spegnere temporaneamente un singolo agente:
+- **Actions → Agent X → "..." menu → Disable workflow**
+
+Per spegnere tutto:
+- **Actions → Disable Actions** (a livello repo) oppure
+- Revoca il `CLAUDE_CODE_OAUTH_TOKEN` (effetto immediato senza toccare i file)
