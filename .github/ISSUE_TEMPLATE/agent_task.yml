@@ -22,6 +22,17 @@ body:
         - summary
     validations:
       required: true
+  - type: dropdown
+    id: priorita
+    attributes:
+      label: Priorità
+      description: Allineata al campo "Priorità" del Master Board (Project v2 #4).
+      options:
+        - 🟡 Medio
+        - 🔴 Urgente
+        - 🔵 Bassa
+    validations:
+      required: true
   - type: textarea
     id: contesto
     attributes:

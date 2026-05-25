@@ -1,0 +1,6 @@
+{
+  "name": "Notify Agent Failure (Telegram)",
+  "description": "Invia notifica Telegram quando un workflow agent:* fallisce. Richiede secret TELEGRAM_BOT_TOKEN e TELEGRAM_CHAT_ID.",
+  "iconName": "octicon-bell",
+  "categories": ["Automation", "Notifications"]
+}

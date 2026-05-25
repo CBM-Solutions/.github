@@ -39,3 +39,12 @@ jobs:
             Output: un singolo commento strutturato sull'oggetto etichettato
             (PR o issue), con sezioni "Bloccanti", "Da valutare", "Note minori".
             Non aprire PR, non modificare codice.
+
+      # === Master Board: aggiungi PR/issue ===
+      - name: Aggiungi a Master Board
+        if: success()
+        continue-on-error: true
+        uses: actions/add-to-project@v1
+        with:
+          project-url: https://github.com/orgs/CBM-Solutions/projects/4
+          github-token: ${{ secrets.MASTER_BOARD_TOKEN }}

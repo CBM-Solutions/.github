@@ -39,3 +39,12 @@ jobs:
 
             Output: un singolo commento sull'oggetto etichettato. Nessuna PR,
             nessuna modifica al codice, nessuna analisi profonda.
+
+      # === Master Board: aggiungi PR/issue ===
+      - name: Aggiungi a Master Board
+        if: success()
+        continue-on-error: true
+        uses: actions/add-to-project@v1
+        with:
+          project-url: https://github.com/orgs/CBM-Solutions/projects/4
+          github-token: ${{ secrets.MASTER_BOARD_TOKEN }}

@@ -1,0 +1,47 @@
+name: Notify Agent Failure
+on:
+  workflow_run:
+    workflows:
+      - "Agent Fix"
+      - "Agent Review"
+      - "Agent Docs"
+      - "Agent Test"
+      - "Agent Refactor"
+      - "Agent Summary"
+    types: [completed]
+
+jobs:
+  notify:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Telegram notification
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WF_NAME: ${{ github.event.workflow_run.name }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          ACTOR: ${{ github.event.workflow_run.triggering_actor.login }}
+        run: |
+          if [ -z "$BOT_TOKEN" ] || [ -z "$CHAT_ID" ]; then
+            echo "::warning::TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID non configurati, salto notifica"
+            exit 0
+          fi
+          MESSAGE=$(cat <<EOF
+          🔴 *${WF_NAME}* failed
+
+          *Repo:* \`${REPO}\`
+          *Branch:* \`${BRANCH}\`
+          *Triggered by:* ${ACTOR}
+
+          [Apri run su GitHub](${RUN_URL})
+          EOF
+          )
+          curl -sS --fail-with-body \
+            "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${CHAT_ID}" \
+            --data-urlencode "parse_mode=Markdown" \
+            --data-urlencode "disable_web_page_preview=true" \
+            --data-urlencode "text=${MESSAGE}"
