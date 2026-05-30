@@ -55,9 +55,11 @@ jobs:
             Meglio segnalare un finding che verrà poi scartato che ometterne uno reale.
             </reporting>
 
-            Output: un singolo commento strutturato sull'oggetto etichettato,
-            con sezioni "Critico", "Alto", "Medio", "Basso".
-            Se non trovi nulla, dichiaralo esplicitamente.
+            Pubblica OBBLIGATORIAMENTE il risultato come commento, usando il tool:
+            - se EVENTO è "issues": `gh issue comment ${{ github.event.issue.number }} --body "..."`
+            - se EVENTO è "pull_request": `gh pr comment ${{ github.event.pull_request.number }} --body "..."`
+            Il commento deve essere strutturato con sezioni "Critico", "Alto",
+            "Medio", "Basso". Se non trovi nulla, dichiaralo esplicitamente.
             Non aprire PR, non modificare codice.
 
       # === Master Board: aggiungi PR/issue ===

@@ -48,9 +48,11 @@ jobs:
                - best practice (tagging, versioning provider, pin delle immagini)
             </metodo>
 
-            Output: un singolo commento strutturato con sezioni
-            "Bloccanti di sicurezza", "Da migliorare", "Note".
-            Per ogni punto indica file, riga e remediation.
+            Pubblica OBBLIGATORIAMENTE il risultato come commento, usando il tool:
+            - se EVENTO è "issues": `gh issue comment ${{ github.event.issue.number }} --body "..."`
+            - se EVENTO è "pull_request": `gh pr comment ${{ github.event.pull_request.number }} --body "..."`
+            Il commento deve essere strutturato con sezioni "Bloccanti di sicurezza",
+            "Da migliorare", "Note"; per ogni punto indica file, riga e remediation.
             Non aprire PR, non modificare codice.
 
       # === Master Board: aggiungi PR/issue ===
