@@ -95,6 +95,14 @@ Senza branch protection l'agente potrebbe in teoria mergiare da solo se gli conc
 
 ---
 
+## Note operative emerse dai test
+
+- **`agent:cicd` e i file in `.github/workflows/`**: per far sì che l'agente pushi direttamente i workflow serve concedere alla GitHub App di Claude il permesso **Workflows: Read and write** (Organization → Settings → GitHub Apps → claude → Permissions). Senza, l'agente ripiega postando il contenuto del file come commento. Dockerfile/script fuori da `.github/workflows/` funzionano senza permessi extra.
+- **Repo privati e minuti Actions**: sul piano Free i minuti sono condivisi a livello org. Se i run iniziano a fallire all'avvio con zero step, è la quota esaurita: rendere il repo pubblico (minuti illimitati) o attendere il reset di fatturazione.
+- **Modelli**: `agent:security` e `agent:review` girano su `claude-opus-4-8`; verifica nei log la riga "Claude Code initialized" → `model`.
+
+---
+
 ## Disattivazione
 
 Per spegnere temporaneamente un singolo agente:

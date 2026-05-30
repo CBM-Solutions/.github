@@ -160,6 +160,8 @@ Nessun server. Nessun webhook gateway. Tutto su infrastruttura GitHub + abboname
 
 **Limiti di sicurezza:** NON esegue deploy reali né comandi distruttivi — prepara solo la PR. Per azioni irreversibili o su infra condivisa, segnala e lascia decidere a te.
 
+> **⚠️ Permesso `workflows` necessario.** Il token della GitHub App di Claude di default **non può creare o modificare file in `.github/workflows/`** (limite di sicurezza GitHub). Se chiedi a `agent:cicd` di scrivere un workflow, senza il permesso aggiuntivo l'agente non riesce a pushare e ripiega postando il contenuto del file + le istruzioni come commento (degrado graceful). Per abilitare la scrittura diretta dei workflow: Organization → Settings → GitHub Apps → claude → Permissions → **Workflows: Read and write**. In alternativa, l'agente può scrivere Dockerfile/script/config fuori da `.github/workflows/` senza alcun permesso extra.
+
 ### `agent:iac` — Infra-as-Code review
 
 **Trigger:** label su PR (o issue).
