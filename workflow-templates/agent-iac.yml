@@ -57,7 +57,7 @@ jobs:
       - name: Aggiungi a Master Board
         if: success()
         continue-on-error: true
-        uses: actions/add-to-project@v1
+        uses: actions/add-to-project@v1.0.2
         with:
           project-url: https://github.com/orgs/CBM-Solutions/projects/4
           github-token: ${{ secrets.MASTER_BOARD_TOKEN }}
