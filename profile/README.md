@@ -55,6 +55,10 @@ Ogni repo della org può adottare i workflow template di questa centrale per att
 | `agent:test` | Genera o sistema i test |
 | `agent:refactor` | Refactoring mirato preservando il comportamento |
 | `agent:summary` | TL;DR mobile-friendly (read-only) |
+| `agent:security` | Security review diff-aware (read-only) |
+| `agent:cicd` | CI/CD, Dockerfile, script di deploy |
+| `agent:iac` | Review Infra-as-Code: Terraform, K8s, cloud (read-only) |
+| `agent:maintain` | Riduzione debito tecnico / manutenibilità |
 
 ### 🔌 Setup su un nuovo repo
 

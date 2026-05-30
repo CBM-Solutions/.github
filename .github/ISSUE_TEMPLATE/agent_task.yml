@@ -20,6 +20,10 @@ body:
         - test
         - refactor
         - summary
+        - security
+        - cicd
+        - iac
+        - maintain
     validations:
       required: true
   - type: dropdown

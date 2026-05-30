@@ -1,0 +1,6 @@
+{
+  "name": "Agent IaC (Claude)",
+  "description": "Review di Infra-as-Code (Terraform/K8s/Docker/cloud) quando una PR/issue riceve l'etichetta agent:iac.",
+  "iconName": "octicon-server",
+  "categories": ["Automation", "Security"]
+}

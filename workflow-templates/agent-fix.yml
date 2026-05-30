@@ -34,6 +34,11 @@ jobs:
             4. Commenta la issue con il link alla PR.
             Mantieni lo scope ristretto: niente refactor non richiesti.
 
+            Per azioni difficili da invertire o distruttive (force-push,
+            reset --hard, rm -rf, modifiche a infra condivisa) non procedere:
+            segnala nella PR e lascia decidere all'umano. Non aggirare i check
+            con --no-verify.
+
       # === Master Board: aggiungi issue ===
       - name: Aggiungi issue a Master Board
         id: add-to-project

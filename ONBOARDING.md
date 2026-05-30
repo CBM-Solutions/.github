@@ -73,6 +73,10 @@ Se uno dei passi sopra non funziona, vai alla sezione [Troubleshooting](#-troubl
 | Aggiungere unit/integration test | `agent:test` | label su issue |
 | Refactoring mirato senza cambi di comportamento | `agent:refactor` | label su issue |
 | Solo capire al volo cosa dice un'issue/PR (mobile-friendly) | `agent:summary` | label su issue o PR |
+| Security review diff-aware di una PR | `agent:security` | label su PR |
+| Scrivere/sistemare CI/CD, Dockerfile, deploy | `agent:cicd` | label su issue |
+| Review di Terraform/K8s/config cloud | `agent:iac` | label su PR |
+| Ridurre debito tecnico / manutenibilità | `agent:maintain` | label su issue |
 
 **Regola d'oro**: applica una sola label `agent:*` alla volta. Se vuoi più passaggi (fix → review), prima esegui uno, poi rietichetta per il secondo. Le etichette parallele creano PR concorrenti che vanno in conflitto.
 

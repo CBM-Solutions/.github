@@ -1,0 +1,6 @@
+{
+  "name": "Agent Maintain (Claude)",
+  "description": "Refactor di manutenibilità e riduzione tech-debt quando una issue riceve l'etichetta agent:maintain.",
+  "iconName": "octicon-tools",
+  "categories": ["Automation"]
+}

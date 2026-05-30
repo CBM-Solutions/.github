@@ -8,6 +8,10 @@ on:
       - "Agent Test"
       - "Agent Refactor"
       - "Agent Summary"
+      - "Agent Security"
+      - "Agent CICD"
+      - "Agent IaC"
+      - "Agent Maintain"
     types: [completed]
 
 jobs:

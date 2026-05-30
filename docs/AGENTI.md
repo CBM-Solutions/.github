@@ -38,7 +38,7 @@ Nessun server. Nessun webhook gateway. Tutto su infrastruttura GitHub + abboname
 
 ---
 
-## I 6 agenti in dettaglio
+## I 10 agenti in dettaglio
 
 ### `agent:fix` — Risolutore di bug
 
@@ -134,6 +134,55 @@ Nessun server. Nessun webhook gateway. Tutto su infrastruttura GitHub + abboname
 
 **Read-only:** non modifica nulla, non apre PR. È il più sicuro di tutti — puoi farlo girare a costo bassissimo (~$0.01).
 
+### `agent:security` — Security review diff-aware
+
+**Trigger:** label su PR (o issue).
+
+**Cosa fa:** legge il diff, cerca vulnerabilità (injection, XSS, auth flaw, secret hardcoded, input non validato, deserializzazione insicura, path traversal, SSRF, dipendenze vulnerabili) e posta un commento con sezioni **Critico / Alto / Medio / Basso**, ognuna con confidence e remediation.
+
+**Quando usarlo:**
+- Prima di mergiare PR che toccano auth, input utente, query DB, upload file
+- Audit periodico di un'area sensibile
+- Doppio controllo su codice generato da altri agenti
+
+**Note:** usa il modello Opus (recall massima sui bug) e il pattern "report-everything" — segnala anche i finding incerti, il triage lo fai tu. Read-only, non apre PR.
+
+### `agent:cicd` — DevOps / CI-CD automation
+
+**Trigger:** label su issue.
+
+**Cosa fa:** crea o sistema workflow GitHub Actions, Dockerfile, docker-compose, script di build/release/deploy. Apre PR `cicd:`.
+
+**Quando usarlo:**
+- "Aggiungi un workflow CI che fa lint + test su ogni PR"
+- "Scrivi un Dockerfile multi-stage per questo servizio Node"
+- "Sistema il workflow di release che fallisce sul tag"
+
+**Limiti di sicurezza:** NON esegue deploy reali né comandi distruttivi — prepara solo la PR. Per azioni irreversibili o su infra condivisa, segnala e lascia decidere a te.
+
+### `agent:iac` — Infra-as-Code review
+
+**Trigger:** label su PR (o issue).
+
+**Cosa fa:** review read-only di Terraform, manifest K8s, docker-compose, config cloud. Cerca misconfigurazioni di sicurezza (security group aperti, bucket pubblici, IAM larghi, container privileged), secret in chiaro, assenza di resource limit, drift, best practice mancanti.
+
+**Quando usarlo:**
+- PR che modifica `.tf` o manifest K8s prima del merge
+- Audit di sicurezza dell'infrastruttura dichiarativa
+
+### `agent:maintain` — Manutenibilità / tech-debt
+
+**Trigger:** label su issue.
+
+**Cosa fa:** refactor mirato di manutenibilità (naming, dead code, duplicazione, funzioni troppo complesse, struttura moduli) preservando il comportamento. Apre PR `maintain:` con sezione "Prima / Dopo".
+
+**Quando usarlo:**
+- "Estrai la logica duplicata tra X e Y"
+- "Questo modulo è troppo grande, spezzalo"
+- Ripagare debito tecnico noto in modo incrementale
+
+**Differenza da `refactor`:** `refactor` è chirurgico su una richiesta puntuale; `maintain` ragiona sulla salute del codice di un'area e propone il primo passo incrementale. Entrambi anti-overengineering.
+
 ---
 
 ## Come scrivere una buona issue per un agente
@@ -181,20 +230,24 @@ I passi 4-6 sono `continue-on-error: true`: se uno dei secret di integrazione ma
 
 ## Limiti, costi, performance
 
-### Modello
+### Modello (selezione per agente)
 
-Default: **`claude-sonnet-4-6`** scelto dall'action.
-
-Override per agente (nel `claude_args`):
+Default dell'action: **`claude-sonnet-4-6`**. Override per agente via `--model` in `claude_args`:
 ```yaml
 claude_args: |
-  --model claude-haiku-4-5     # economico, per summary/review
+  --model claude-opus-4-8
   --allowedTools "..."
 ```
 
-Quando vale la pena cambiare:
-- `summary`, `review` → `haiku-4-5` (~10× più economico, qualità sufficiente)
-- task complessi una tantum → `opus-4-7` esplicito
+Configurazione attuale dei template:
+
+| Modello | Agenti | Razionale |
+|---|---|---|
+| `claude-haiku-4-5` | `summary` | Task breve read-only, ~10× più economico |
+| `claude-sonnet-4-6` | `fix`, `docs`, `test`, `refactor`, `cicd`, `maintain`, `iac` | Best balance qualità/costo per coding |
+| `claude-opus-4-8` | `security`, `review` | Migliore recall su bug e vulnerabilità |
+
+> Il parametro `effort` (es. `xhigh` per coding) è a livello API e non è esposto come flag CLI in `claude_args`; lo steering equivalente si ottiene via prompt e scelta del modello. Per i task dove serve più ragionamento, il modello Opus + prompt "ragiona attentamente prima di agire" è la leva.
 
 ### Costi misurati sul sandbox (Sonnet 4.6)
 
@@ -205,7 +258,11 @@ Quando vale la pena cambiare:
 | `docs` | 1-3min | ~$0.05-0.10 |
 | `test` (con esecuzione) | 2-5min | ~$0.10-0.30 |
 | `refactor` | 1-3min | ~$0.08-0.20 |
-| `review` (PR media) | 1min | ~$0.05-0.10 |
+| `review` (PR media, Opus) | 1-2min | ~$0.10-0.25 |
+| `security` (PR media, Opus) | 1-3min | ~$0.10-0.30 |
+| `iac` | 1-2min | ~$0.05-0.15 |
+| `cicd` | 1-3min | ~$0.08-0.20 |
+| `maintain` | 1-4min | ~$0.10-0.25 |
 
 Imputati alla quota Claude Max del proprietario del `CLAUDE_CODE_OAUTH_TOKEN` caricato nel repo. **Non c'è fatturazione API a token aggiuntiva.**
 

@@ -1,11 +1,11 @@
-name: Agent Refactor
+name: Agent CICD
 on:
   issues:
     types: [labeled]
 
 jobs:
   run:
-    if: github.event.label.name == 'agent:refactor'
+    if: github.event.label.name == 'agent:cicd'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -19,25 +19,35 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: |
-            --allowedTools "Edit,Write,Read,MultiEdit,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(git:*)"
+            --model claude-sonnet-4-6
+            --allowedTools "Edit,Write,Read,MultiEdit,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(git:*),Bash(docker:*),Bash(act:*)"
           prompt: |
             REPO: ${{ github.repository }}
             ISSUE #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
 
             ${{ github.event.issue.body }}
 
-            Esegui un refactoring mirato preservando il comportamento osservabile:
-            1. Limita lo scope a quanto descritto nella issue.
-            2. Mantieni i test esistenti verdi; aggiungine solo se servono a fissare
-               il comportamento prima della modifica.
-            3. Nella descrizione della PR includi una sezione "Prima / Dopo"
-               con i pattern principali toccati e "Closes #${{ github.event.issue.number }}".
-            4. Apri una PR "refactor:" e commenta la issue con il link.
-            Non introdurre nuove dipendenze o feature.
+            Sei un ingegnere DevOps. Implementa quanto richiesto nella issue
+            riguardo CI/CD e automazione: workflow GitHub Actions, Dockerfile,
+            docker-compose, script di build/release/deploy.
 
-            Per azioni difficili da invertire o distruttive (force-push,
-            reset --hard, rm -rf) non procedere: segnala nella PR e lascia
-            decidere all'umano. Non aggirare i check con --no-verify.
+            <metodo>
+            1. Leggi la struttura del repo per capire stack e tool esistenti
+               prima di scrivere: non duplicare configurazioni già presenti.
+            2. Crea un branch dedicato (es. agent/cicd-<numero-issue>).
+            3. Applica le modifiche minime e coerenti con le convenzioni del repo.
+            4. Apri una PR "cicd:" verso il branch di default con descrizione che
+               include "Closes #${{ github.event.issue.number }}".
+            5. Commenta la issue con il link alla PR.
+            </metodo>
+
+            <vincoli>
+            - NON eseguire deploy reali né comandi distruttivi: prepara solo la PR.
+            - Per azioni difficili da invertire o che toccano infra condivisa,
+              non procedere: segnala nella descrizione della PR e lascia decidere
+              all'umano. Non usare --no-verify o flag che aggirano i check.
+            - Mantieni lo scope minimo: niente astrazioni o tool non richiesti.
+            </vincoli>
 
       # === Master Board: aggiungi issue ===
       - name: Aggiungi issue a Master Board

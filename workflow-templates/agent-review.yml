@@ -23,6 +23,7 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: |
+            --model claude-opus-4-8
             --allowedTools "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(git log:*),Bash(git diff:*),Bash(git show:*)"
           prompt: |
             REPO: ${{ github.repository }}
@@ -35,6 +36,14 @@ jobs:
             - rischi di sicurezza (injection, auth, secret, input non validato)
             - regressioni di performance evidenti
             - chiarezza e manutenibilità solo se rilevante
+
+            <reporting>
+            Segnala OGNI problema che trovi, anche incerto o a bassa severità:
+            non auto-filtrare per importanza. Per ciascun finding indica confidence
+            e severità stimata, così un umano può fare il triage a valle.
+            Riporta solo bug reali (comportamento errato, test che fallirebbe,
+            risultato fuorviante); ometti le pure preferenze di stile.
+            </reporting>
 
             Output: un singolo commento strutturato sull'oggetto etichettato
             (PR o issue), con sezioni "Bloccanti", "Da valutare", "Note minori".

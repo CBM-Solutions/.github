@@ -1,0 +1,6 @@
+{
+  "name": "Agent CICD (Claude)",
+  "description": "Crea/sistema workflow Actions, Dockerfile e script di deploy quando una issue riceve l'etichetta agent:cicd.",
+  "iconName": "octicon-rocket",
+  "categories": ["Automation", "Deployment"]
+}

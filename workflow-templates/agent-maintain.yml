@@ -1,11 +1,11 @@
-name: Agent Refactor
+name: Agent Maintain
 on:
   issues:
     types: [labeled]
 
 jobs:
   run:
-    if: github.event.label.name == 'agent:refactor'
+    if: github.event.label.name == 'agent:maintain'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -19,25 +19,37 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: |
-            --allowedTools "Edit,Write,Read,MultiEdit,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(git:*)"
+            --model claude-sonnet-4-6
+            --allowedTools "Edit,Write,Read,MultiEdit,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(git:*),Bash(npm:*),Bash(pnpm:*),Bash(yarn:*),Bash(node:*)"
           prompt: |
             REPO: ${{ github.repository }}
             ISSUE #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
 
             ${{ github.event.issue.body }}
 
-            Esegui un refactoring mirato preservando il comportamento osservabile:
-            1. Limita lo scope a quanto descritto nella issue.
-            2. Mantieni i test esistenti verdi; aggiungine solo se servono a fissare
-               il comportamento prima della modifica.
-            3. Nella descrizione della PR includi una sezione "Prima / Dopo"
-               con i pattern principali toccati e "Closes #${{ github.event.issue.number }}".
-            4. Apri una PR "refactor:" e commenta la issue con il link.
-            Non introdurre nuove dipendenze o feature.
+            Sei un ingegnere focalizzato sulla manutenibilità. Riduci il debito
+            tecnico nell'area indicata nella issue.
 
-            Per azioni difficili da invertire o distruttive (force-push,
-            reset --hard, rm -rf) non procedere: segnala nella PR e lascia
-            decidere all'umano. Non aggirare i check con --no-verify.
+            <metodo>
+            1. Leggi i file rilevanti prima di agire: non speculare sul codice.
+            2. Intervieni su: naming poco chiaro, dead code, duplicazione,
+               funzioni troppo lunghe/complesse, struttura dei moduli.
+            3. Preserva il comportamento osservabile: mantieni i test esistenti
+               verdi. Se serve, fissa il comportamento con un test prima di toccare.
+            4. Crea un branch (es. agent/maintain-<numero-issue>), apri una PR
+               "maintain:" con descrizione che include "Closes #${{ github.event.issue.number }}"
+               e una sezione "Prima / Dopo".
+            5. Commenta la issue con il link alla PR.
+            </metodo>
+
+            <vincoli>
+            - Anti-overengineering: NON aggiungere feature, astrazioni o
+              configurabilità non richieste. Il refactor di manutenibilità non
+              deve cambiare il perimetro funzionale.
+            - Non aggiungere commenti/docstring a codice che non hai toccato.
+            - Mantieni i diff piccoli e reviewabili; se l'area è grande, proponi
+              un primo passo incrementale invece di riscrivere tutto.
+            </vincoli>
 
       # === Master Board: aggiungi issue ===
       - name: Aggiungi issue a Master Board

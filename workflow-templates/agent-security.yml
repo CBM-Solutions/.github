@@ -1,0 +1,70 @@
+name: Agent Security
+on:
+  pull_request:
+    types: [labeled]
+  issues:
+    types: [labeled]
+
+jobs:
+  run:
+    if: github.event.label.name == 'agent:security'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: |
+            --model claude-opus-4-8
+            --allowedTools "Read,Glob,Grep,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(gh pr comment:*),Bash(gh issue comment:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
+          prompt: |
+            REPO: ${{ github.repository }}
+            EVENTO: ${{ github.event_name }}
+            PR #${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}
+            ISSUE #${{ github.event.issue.number }} ${{ github.event.issue.title }}
+
+            Sei un analista di sicurezza applicativa. Esegui una security review
+            diff-aware dell'oggetto etichettato.
+
+            <metodo>
+            1. Se è una PR, leggi il diff completo (gh pr diff). Se è una issue,
+               leggi il contesto e i file citati.
+            2. Non fare affermazioni su codice che non hai aperto: leggi i file
+               rilevanti prima di concludere.
+            3. Cerca: injection (SQL/command/template), XSS, falle di
+               autenticazione/autorizzazione, secret hardcoded, input non
+               validato, deserializzazione insicura, path traversal, SSRF,
+               dipendenze vulnerabili, gestione errori che espone dati.
+            </metodo>
+
+            <reporting>
+            Segnala OGNI problema che trovi, anche incerto o a bassa severità.
+            Non filtrare per importanza in questa fase. Per ciascun finding indica:
+            - severità stimata (Critico / Alto / Medio / Basso)
+            - livello di confidence
+            - file e riga
+            - remediation concreta
+            Meglio segnalare un finding che verrà poi scartato che ometterne uno reale.
+            </reporting>
+
+            Output: un singolo commento strutturato sull'oggetto etichettato,
+            con sezioni "Critico", "Alto", "Medio", "Basso".
+            Se non trovi nulla, dichiaralo esplicitamente.
+            Non aprire PR, non modificare codice.
+
+      # === Master Board: aggiungi PR/issue ===
+      - name: Aggiungi a Master Board
+        if: success()
+        continue-on-error: true
+        uses: actions/add-to-project@v1
+        with:
+          project-url: https://github.com/orgs/CBM-Solutions/projects/4
+          github-token: ${{ secrets.MASTER_BOARD_TOKEN }}

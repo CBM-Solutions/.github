@@ -1,0 +1,6 @@
+{
+  "name": "Agent Security (Claude)",
+  "description": "Security review diff-aware quando una PR/issue riceve l'etichetta agent:security.",
+  "iconName": "octicon-shield",
+  "categories": ["Automation", "Security"]
+}
