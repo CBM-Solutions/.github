@@ -18,7 +18,7 @@ jobs:
       issues: write
       id-token: write
       actions: read
-    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@40880453a64d22c662f8b8f0d4138a15f619d594
+    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@887012fd5c3e1f3b45bcaa8cbb33d1603cf24e56
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       MASTER_BOARD_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
@@ -26,19 +26,14 @@ jobs:
       model: claude-haiku-4-5
       fetch_depth: 0
       enable_retry: true
+      use_skills: true
       allowed_tools: "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr comment:*),Bash(gh issue view:*),Bash(gh pr view:*),Bash(gh pr diff:*)"
       prompt: |
+        /agent-summary
+
         REPO: ${{ github.repository }}
         EVENTO: ${{ github.event_name }}
         PR #${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}
         ISSUE #${{ github.event.issue.number }} ${{ github.event.issue.title }}
 
-        Produci un TL;DR mobile-friendly (3-5 bullet, max ~80 caratteri per bullet)
-        dell'oggetto etichettato, pensato per essere letto al volo da telefono
-        prima di decidere come procedere manualmente. Includi:
-        - di cosa si tratta in una frase
-        - punti chiave / decisioni richieste
-        - eventuali rischi o blocchi evidenti
-
-        Output: un singolo commento sull'oggetto etichettato. Nessuna PR,
-        nessuna modifica al codice, nessuna analisi profonda.
+        ${{ github.event.issue.body }}
