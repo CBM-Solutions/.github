@@ -28,7 +28,7 @@ jobs:
       GH_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
       WINDOW_DAYS: "30"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Aggrega run degli agenti e genera OBSERVABILITY.md
         run: |

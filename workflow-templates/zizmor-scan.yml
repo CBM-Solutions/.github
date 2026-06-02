@@ -1,0 +1,29 @@
+name: Zizmor Workflow Scan
+
+# Analisi statica di sicurezza dei workflow GitHub Actions con zizmor.
+# Rileva: unpinned-uses (action non pinnate a SHA), template-injection
+# (${{ }} non fidato nei run:), excessive-permissions (permessi troppo larghi).
+# Serverless, zero costo su repo pubblici.
+
+on:
+  push:
+    paths:
+      - ".github/workflows/**"
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  zizmor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Esegui zizmor (offline)
+        run: |
+          python3 -m pip install --quiet --user zizmor
+          # --offline: solo audit statici (no token), --persona regular per ridurre i falsi positivi
+          "$HOME/.local/bin/zizmor" --offline --persona regular .github/workflows/

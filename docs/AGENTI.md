@@ -298,9 +298,22 @@ L'agente NON ha:
 - Possibilità di committare direttamente su `main` (la branch protection del repo si applica)
 - Accesso a repo diversi da quello che lo ha triggerato
 
-### Allowed tools
+### Allowed / disallowed tools
 
 Ogni workflow passa una whitelist precisa di tool consentiti (Edit/Write/Read + alcuni `gh`/`git`/`npm`/...). Se Claude prova un tool fuori lista, viene bloccato. Vedi `claude_args: --allowedTools "..."` in ogni template.
+
+In più, ogni agente ha un `--disallowedTools` esplicito che blocca i binari di **recon/esfiltrazione** usati negli exploit di prompt-injection reali (`ps`, `cat`, `env`, `printenv`, `curl`, `wget`, `nc`, `base64`, ...). `--disallowedTools` ha precedenza su `--allowedTools`: anche se un allowlist venisse allargato per errore, questi restano bloccati. Impedisce il pattern `cat /proc/self/environ` → esfiltrazione di `CLAUDE_CODE_OAUTH_TOKEN`/token OIDC via commento.
+
+### Hardening supply-chain
+
+- **Action pinnate al commit SHA** (non a tag mutabili come `@v1`): dopo il compromesso tj-actions/changed-files (mar-2025) i tag possono essere ripuntati a codice malevolo. Tutte le `uses:` riportano `@<sha> # <tag>` per leggibilità. `anthropics/claude-code-action` è pinnata a una versione **≥ v1.0.94** (patchata contro l'esfiltrazione via injection, CVSS 9.4).
+- **Zizmor scan** (`zizmor-scan.yml`): scanner statico che gira su ogni push/PR ai workflow e fallisce su `unpinned-uses` / `template-injection` / `excessive-permissions`. È il guardiano permanente contro le regressioni.
+- **Least-privilege**: i permessi del `GITHUB_TOKEN` sono scopati per-job; gli agenti read-only (`summary`/`review`/`security`/`iac`) hanno `contents: read`.
+- **Input non fidato**: il corpo della issue è passato solo come prompt (`with:`), mai interpolato in un blocco `run:` (che sarebbe shell-injection). Non aprire gli agenti a contributor esterni via `allowed_non_write_users`.
+
+### Residuo di rischio accettato
+
+Il gate primario resta il **trigger solo da utenti con write access** (difesa di `claude-code-action`). Per uso interno questo mitiga il prompt-injection via contenuto. La sanitizzazione integrata di Anthropic è dichiarata **incompleta**: non aprire mai gli agenti a input di estranei senza revisione umana.
 
 ### Revoca rapida
 

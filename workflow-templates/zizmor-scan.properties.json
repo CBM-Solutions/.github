@@ -1,0 +1,6 @@
+{
+  "name": "Zizmor Workflow Scan",
+  "description": "Analisi statica di sicurezza dei workflow Actions (unpinned-uses, template-injection, excessive-permissions).",
+  "iconName": "octicon-shield-check",
+  "categories": ["Automation", "Security"]
+}

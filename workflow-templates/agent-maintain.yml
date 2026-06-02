@@ -14,12 +14,13 @@ jobs:
       id-token: write
       actions: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: anthropics/claude-code-action@v1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1.0.133
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           claude_args: |
             --model claude-sonnet-4-6
+            --disallowedTools "Bash(ps:*),Bash(cat:*),Bash(env:*),Bash(printenv:*),Bash(curl:*),Bash(wget:*),Bash(eval:*),Bash(export:*),Bash(nc:*),Bash(base64:*)"
             --allowedTools "Edit,Write,Read,MultiEdit,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(git:*),Bash(npm:*),Bash(pnpm:*),Bash(yarn:*),Bash(node:*)"
           prompt: |
             REPO: ${{ github.repository }}
@@ -56,7 +57,7 @@ jobs:
         id: add-to-project
         if: success()
         continue-on-error: true
-        uses: actions/add-to-project@v1.0.2
+        uses: actions/add-to-project@244f685bbc3b7adfa8466e08b698b5577571133e # v1.0.2
         with:
           project-url: https://github.com/orgs/CBM-Solutions/projects/4
           github-token: ${{ secrets.MASTER_BOARD_TOKEN }}
