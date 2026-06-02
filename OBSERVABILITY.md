@@ -1,17 +1,17 @@
 # 📊 Fleet Dashboard — agenti Claude (ultimi 30 giorni)
 
-_Aggiornato: 2026-06-02 10:13 UTC · org `CBM-Solutions`_
+_Aggiornato: 2026-06-02 10:17 UTC · org `CBM-Solutions`_
 
 ## Riepilogo
 
 | Metrica | Valore |
 |---|---|
-| Run totali (escl. skipped) | 6 |
-| ✅ Success | 3 |
+| Run totali (escl. skipped) | 4 |
+| ✅ Success | 2 |
 | 🔴 Failure | 2 |
 | Success rate | 50% |
 | ⏭️ Skipped (label non-match) | 36 |
-| 💸 Stima costo-equivalente | $0.70 _(proxy, non fatturato su Max)_ |
+| 💸 Stima costo-equivalente | $0.50 _(proxy, non fatturato su Max)_ |
 
 ## Per agente
 
@@ -20,13 +20,11 @@ _Aggiornato: 2026-06-02 10:13 UTC · org `CBM-Solutions`_
 | Agent Fix | 1 | 1 | 0 | 64 | $0.10 |
 | Agent IaC | 2 | 1 | 1 | 139 | $0.20 |
 | Agent Test | 1 | 0 | 1 | 23 | $0.20 |
-| Fleet Dashboard | 2 | 1 | 0 | 10 | $0.20 |
 
 ## Per repository
 
 | Repo | Run | Success | Failure |
 |---|---|---|---|
-| .github | 2 | 1 | 0 |
 | agent-sandbox | 4 | 2 | 2 |
 
 ---
