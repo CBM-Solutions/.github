@@ -45,7 +45,7 @@ jobs:
             gh run list --repo "$ORG/$repo" --limit 100 \
               --created ">$SINCE" \
               --json workflowName,conclusion,createdAt,updatedAt \
-              --jq '.[] | select(.workflowName|test("^Agent |^Fleet")) |
+              --jq '.[] | select(.workflowName|test("^Agent ")) |
                     [ "'"$repo"'", .workflowName, (.conclusion // "running"),
                       (( (.updatedAt|fromdateiso8601) - (.createdAt|fromdateiso8601) )|tostring) ] | @tsv' \
               >> "$TMP/rows.tsv" 2>/dev/null || echo "skip $repo (nessun workflow/permesso)"
