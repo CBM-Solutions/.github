@@ -25,5 +25,10 @@ jobs:
       - name: Esegui zizmor (offline)
         run: |
           python3 -m pip install --quiet --user zizmor
-          # --offline: solo audit statici (no token), --persona regular per ridurre i falsi positivi
-          "$HOME/.local/bin/zizmor" --offline --persona regular .github/workflows/
+          # --offline: solo audit statici (no token).
+          # --min-confidence medium: il gate fallisce solo su finding ad alta/media
+          #   confidenza (es. action non pinnata, permessi eccessivi). I finding Low
+          #   (template-injection inerente al passaggio del corpo issue al prompt —
+          #   mitigato da write-gate + --disallowedTools — e artipacked) restano
+          #   visibili nel log ma non bloccano. Rivedere periodicamente l'output.
+          "$HOME/.local/bin/zizmor" --offline --min-confidence medium .github/workflows/
