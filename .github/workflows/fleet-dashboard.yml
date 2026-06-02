@@ -131,12 +131,13 @@ jobs:
       - name: Commit dashboard se cambiato
         run: |
           set -e
-          if git diff --quiet -- OBSERVABILITY.md; then
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add OBSERVABILITY.md
+          # --cached rileva anche i file nuovi (untracked appena aggiunti)
+          if git diff --cached --quiet; then
             echo "Nessuna variazione in OBSERVABILITY.md"
           else
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add OBSERVABILITY.md
             git commit -m "chore: aggiorna Fleet Dashboard [skip ci]"
             git push
           fi
