@@ -1,6 +1,9 @@
 name: Notify Agent Failure
+# Uso sicuro di workflow_run: NON fa checkout di codice né esegue input non
+# fidato; legge solo metadati della run e invia una notifica Telegram, con
+# permessi nulli. Per questo il trigger è accettato esplicitamente.
 on:
-  workflow_run:
+  workflow_run: # zizmor: ignore[dangerous-triggers]
     workflows:
       - "Agent Fix"
       - "Agent Review"
@@ -14,10 +17,15 @@ on:
       - "Agent Maintain"
     types: [completed]
 
+permissions:
+  contents: read
+
 jobs:
   notify:
     if: github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Send Telegram notification
         env:
