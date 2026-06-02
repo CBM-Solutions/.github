@@ -16,7 +16,7 @@ jobs:
       issues: write
       id-token: write
       actions: read
-    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@f267e99cba97c4636bfa21f57c17e26604edee88
+    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@76ed9eaa7d8e7c8df1dfb76ddd29bf80c8c7359b
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       MASTER_BOARD_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
