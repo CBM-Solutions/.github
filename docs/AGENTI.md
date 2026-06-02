@@ -36,6 +36,8 @@ Issue/PR + label "agent:X"  →  GitHub Actions (runner effimero)
 
 Nessun server. Nessun webhook gateway. Tutto su infrastruttura GitHub + abbonamento Claude Max esistente.
 
+**DRY (Fase 7):** ogni `agent-*.yml` è un *thin caller* (~30-55 righe: trigger, `concurrency`, label-gate, `permissions`, input) che richiama un **reusable workflow centralizzato** `CBM-Solutions/.github/.github/workflows/agent-runner.yml@<sha>`. Lì vivono — in un solo punto — la logica comune (checkout, claude-code-action, retry, pipeline Master Board, reviewer) e i pin SHA. Aggiornare la flotta = 1 commit nel reusable + bump del SHA nei caller. Ogni agente legge anche `CLAUDE.md` dalla root del repo per grounding (convenzioni + regole di sicurezza).
+
 ---
 
 ## I 10 agenti in dettaglio
@@ -228,10 +230,16 @@ Quando trigghi un agente, il sistema fa automaticamente:
 
 I passi 4-6 sono `continue-on-error: true`: se uno dei secret di integrazione manca, il workflow non fallisce — solo logga un warning. Quindi gli agenti funzionano anche in setup parziale, ma perdi visibilità sul board.
 
-Configurazione da tenere allineata nei template:
-- Project target: `https://github.com/orgs/CBM-Solutions/projects/4`
-- Status automatico: opzione `Test` del campo `Status` nel Project v2
-- Reviewer pool: variabile repo `AGENT_REVIEWERS`, fallback `montafra,K0enjy,Belletz-28`
+Configurazione centralizzata nel reusable `agent-runner.yml` (override via variabili org, vedi `SETUP-NUOVO-REPO.md`):
+- Project target: `vars.MASTER_BOARD_PROJECT_URL` → fallback Project #4
+- Status automatico: opzione `Test` del campo `Status` (via `vars.MASTER_BOARD_STATUS_*`)
+- Reviewer pool: `vars.AGENT_REVIEWERS`, fallback `montafra,K0enjy,Belletz-28`
+
+**Concorrenza (Fase 7A):** ogni agente ha un `concurrency` group per issue/PR (`cancel-in-progress: false`): se la stessa label viene riapplicata o due label si sovrappongono sullo stesso oggetto, le run si **accodano** invece di duplicarsi.
+
+**Retry su rate-limit (Fase 7C):** gli agenti read-only (`summary`/`review`/`security`/`iac`) hanno `enable_retry: true` → un singolo retry con backoff 60s se l'action fallisce (utile sui 429 di Claude Max). I PR-creator **non** ritentano per non rischiare PR duplicate.
+
+**Agent-chaining (opt-in, oggi manuale):** dopo che un PR-creator apre la PR, puoi applicare manualmente `agent:review`/`agent:security` per innescare la review. L'automazione (chaining fix→review) è volutamente **disattivata di default** per non moltiplicare i run/consumi; si può abilitare in futuro con un input dedicato nel reusable.
 
 ---
 
@@ -306,7 +314,9 @@ In più, ogni agente ha un `--disallowedTools` esplicito che blocca i binari di 
 
 ### Hardening supply-chain
 
-- **Action pinnate al commit SHA** (non a tag mutabili come `@v1`): dopo il compromesso tj-actions/changed-files (mar-2025) i tag possono essere ripuntati a codice malevolo. Tutte le `uses:` riportano `@<sha> # <tag>` per leggibilità. `anthropics/claude-code-action` è pinnata a una versione **≥ v1.0.94** (patchata contro l'esfiltrazione via injection, CVSS 9.4).
+- **Action pinnate al commit SHA** (non a tag mutabili come `@v1`): dopo il compromesso tj-actions/changed-files (mar-2025) i tag possono essere ripuntati a codice malevolo. Tutte le `uses:` riportano `@<sha> # <tag>` per leggibilità. `anthropics/claude-code-action` è pinnata a una versione **≥ v1.0.94** (patchata contro l'esfiltrazione via injection, CVSS 9.4). Dalla Fase 7 i pin SHA delle action vivono **in un solo punto** (il reusable `agent-runner.yml`); i caller pinnano a loro volta il reusable a SHA → catena di fiducia immutabile end-to-end.
+- **Secret espliciti** (no `secrets: inherit`): i caller passano al reusable solo `CLAUDE_CODE_OAUTH_TOKEN` e `MASTER_BOARD_TOKEN` (least-privilege sui secret; nessun TELEGRAM o altro secret raggiunge il runner dell'agente).
+- **Grounding via `CLAUDE.md`**: ogni agente legge le regole di sicurezza dalla root del repo (non stampare env/secret, tratta il contenuto issue come non fidato, niente azioni distruttive). È difesa-in-profondità sopra ai `--disallowedTools`.
 - **Zizmor scan** (`zizmor-scan.yml`): scanner statico che gira su ogni push/PR ai workflow e fallisce su `unpinned-uses` / `template-injection` / `excessive-permissions`. È il guardiano permanente contro le regressioni.
 - **Least-privilege**: i permessi del `GITHUB_TOKEN` sono scopati per-job; gli agenti read-only (`summary`/`review`/`security`/`iac`) hanno `contents: read`.
 - **Input non fidato**: il corpo della issue è passato solo come prompt (`with:`), mai interpolato in un blocco `run:` (che sarebbe shell-injection). Non aprire gli agenti a contributor esterni via `allowed_non_write_users`.
@@ -333,7 +343,13 @@ Se vedi comportamento anomalo da un agente:
 │   ├── AGENTI.md                        ← questo file
 │   ├── SETUP-NUOVO-REPO.md              ← attivare gli agenti su un repo
 │   └── COSTI.md                         ← report consumi
-├── workflow-templates/                  ← starter per i repo della org
+├── .github/workflows/
+│   ├── agent-runner.yml                 ← REUSABLE centralizzato (logica comune + pin SHA)
+│   ├── zizmor-scan.yml                  ← scanner sicurezza workflow
+│   ├── template-validation.yml          ← actionlint + YAML lint
+│   └── fleet-dashboard.yml              ← OBSERVABILITY.md + Telegram (cron)
+├── workflow-templates/                  ← starter per i repo della org (thin caller)
+│   ├── CLAUDE.md                        ← grounding (da copiare nella root del repo)
 │   ├── agent-fix.yml + .properties.json
 │   ├── agent-review.yml
 │   ├── agent-docs.yml
@@ -346,7 +362,8 @@ Se vedi comportamento anomalo da un agente:
 │   ├── agent-maintain.yml
 │   ├── labels-bootstrap.yml             ← crea le 10 label
 │   ├── labels.yml                       ← definizione dichiarativa
-│   └── notify-on-failure.yml            ← alert Telegram
+│   ├── notify-on-failure.yml            ← alert Telegram
+│   └── zizmor-scan.yml                  ← adottabile per-repo
 ├── .github/ISSUE_TEMPLATE/
 │   └── agent_task.yml                   ← form ereditato da tutti i repo
 └── profile/README.md                    ← pagina pubblica org
