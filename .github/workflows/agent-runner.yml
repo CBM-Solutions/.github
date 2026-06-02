@@ -64,7 +64,7 @@ on:
         description: Ref (SHA) di CBM-Solutions/.github da cui prelevare le skills.
         type: string
         required: false
-        default: "58ca55228346c0c7b0cc246650ff9a601d48e1cd"
+        default: "67003e70a9816191e675234b38bc6dddea441612"
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN:
         description: Token OAuth dell'abbonamento Claude Max.
