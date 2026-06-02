@@ -127,6 +127,7 @@ jobs:
           echo "FAIL=$fail" >> "$GITHUB_ENV"
           echo "RATE=$rate" >> "$GITHUB_ENV"
           echo "EST=$EST" >> "$GITHUB_ENV"
+          echo "SKIP=$skip" >> "$GITHUB_ENV"
 
       - name: Commit dashboard se cambiato
         run: |
@@ -151,11 +152,26 @@ jobs:
           if [ -z "${BOT_TOKEN:-}" ] || [ -z "${CHAT_ID:-}" ]; then
             echo "::warning::TELEGRAM secrets non configurati, salto invio"; exit 0
           fi
-          MSG="📊 *Fleet Dashboard* (${WINDOW_DAYS}gg)%0A%0ARun: *${TOTAL}* · ✅ ${SUCC} · 🔴 ${FAIL} · rate ${RATE}%0A💸 stima ~\$${EST} _(proxy, non fatturato su Max)_"
+          NOW=$(date -u +'%Y-%m-%d %H:%M UTC')
+          # Newline REALI (no %0A) + parse_mode HTML (robusto con _ nei nomi).
+          MSG=$(cat <<EOF
+          📊 <b>Fleet Dashboard</b> · ultimi ${WINDOW_DAYS} giorni
+          <i>aggiornato ${NOW}</i>
+
+          ▫️ Run totali: <b>${TOTAL}</b>
+          ✅ Success: <b>${SUCC}</b>   🔴 Failure: <b>${FAIL}</b>
+          📈 Success rate: <b>${RATE}</b>
+          ⏭️ Skipped (label non-match): ${SKIP}
+          💸 Stima costo: <b>~\$${EST}</b> <i>(proxy, non fatturato su Max)</i>
+
+          Dettaglio per agente e per repo nella dashboard ↓
+          EOF
+          )
           KEYBOARD=$(printf '{"inline_keyboard":[[{"text":"📈 Apri dashboard","url":"%s"}]]}' "$DASH_URL")
           curl -sS --fail-with-body \
             "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${CHAT_ID}" \
-            --data-urlencode "parse_mode=Markdown" \
+            --data-urlencode "parse_mode=HTML" \
+            --data-urlencode "disable_web_page_preview=true" \
             --data-urlencode "text=${MSG}" \
             --data-urlencode "reply_markup=${KEYBOARD}"

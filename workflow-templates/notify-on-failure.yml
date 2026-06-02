@@ -34,12 +34,17 @@ jobs:
             echo "::warning::TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID non configurati, salto notifica"
             exit 0
           fi
+          NOW=$(date -u +'%Y-%m-%d %H:%M UTC')
+          # Newline reali + parse_mode HTML (robusto con _ nei nomi di branch/utente).
           MESSAGE=$(cat <<EOF
-          🔴 *${WF_NAME}* failed
+          🔴 <b>${WF_NAME}</b> — run fallita
 
-          *Repo:* \`${REPO}\`
-          *Branch:* \`${BRANCH}\`
-          *Triggered by:* ${ACTOR}
+          📦 Repo: <code>${REPO}</code>
+          🌿 Branch: <code>${BRANCH}</code>
+          👤 Avviato da: ${ACTOR}
+          🕒 ${NOW}
+
+          Apri i log dalla run per la causa; se serve, riapplica l'etichetta per rilanciare.
           EOF
           )
           # Inline keyboard con URL-button (serverless: nessun callback/listener)
@@ -48,7 +53,7 @@ jobs:
           curl -sS --fail-with-body \
             "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${CHAT_ID}" \
-            --data-urlencode "parse_mode=Markdown" \
+            --data-urlencode "parse_mode=HTML" \
             --data-urlencode "disable_web_page_preview=true" \
             --data-urlencode "text=${MESSAGE}" \
             --data-urlencode "reply_markup=${KEYBOARD}"
