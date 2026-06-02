@@ -18,7 +18,7 @@ jobs:
       issues: write
       id-token: write
       actions: read
-    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@40880453a64d22c662f8b8f0d4138a15f619d594
+    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@887012fd5c3e1f3b45bcaa8cbb33d1603cf24e56
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       MASTER_BOARD_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
@@ -26,33 +26,14 @@ jobs:
       model: claude-sonnet-4-6
       fetch_depth: 0
       enable_retry: true
+      use_skills: true
       allowed_tools: "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh issue view:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
       prompt: |
+        /agent-iac
+
         REPO: ${{ github.repository }}
         EVENTO: ${{ github.event_name }}
         PR #${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}
         ISSUE #${{ github.event.issue.number }} ${{ github.event.issue.title }}
 
-        Sei un revisore Infra-as-Code. Esamina i file di infrastruttura
-        modificati o citati.
-
-        <metodo>
-        1. Identifica i file IaC rilevanti: *.tf / *.tfvars (Terraform),
-           manifest Kubernetes (*.yaml con kind:), docker-compose,
-           Dockerfile, config cloud (CloudFormation, helm values).
-        2. Leggi i file prima di concludere: non speculare su file non aperti.
-        3. Verifica:
-           - misconfigurazioni di sicurezza (security group/ingress 0.0.0.0/0,
-             bucket pubblici, permessi IAM troppo larghi, privileged container)
-           - secret in chiaro
-           - assenza di limiti risorse / liveness-readiness probe (K8s)
-           - drift e incoerenze rispetto al resto della config
-           - best practice (tagging, versioning provider, pin delle immagini)
-        </metodo>
-
-        Pubblica OBBLIGATORIAMENTE il risultato come commento, usando il tool:
-        - se EVENTO è "issues": `gh issue comment ${{ github.event.issue.number }} --body "..."`
-        - se EVENTO è "pull_request": `gh pr comment ${{ github.event.pull_request.number }} --body "..."`
-        Il commento deve essere strutturato con sezioni "Bloccanti di sicurezza",
-        "Da migliorare", "Note"; per ogni punto indica file, riga e remediation.
-        Non aprire PR, non modificare codice.
+        ${{ github.event.issue.body }}

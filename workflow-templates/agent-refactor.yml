@@ -16,30 +16,19 @@ jobs:
       issues: write
       id-token: write
       actions: read
-    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@40880453a64d22c662f8b8f0d4138a15f619d594
+    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@887012fd5c3e1f3b45bcaa8cbb33d1603cf24e56
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       MASTER_BOARD_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
     with:
       is_pr_creator: true
       branch_prefix: refactor
+      use_skills: true
       allowed_tools: "Edit,Write,Read,MultiEdit,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(git:*)"
       prompt: |
+        /agent-refactor
+
         REPO: ${{ github.repository }}
         ISSUE #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
 
         ${{ github.event.issue.body }}
-
-        Esegui un refactoring mirato preservando il comportamento osservabile:
-        1. Limita lo scope a quanto descritto nella issue.
-        2. Mantieni i test esistenti verdi; aggiungine solo se servono a fissare
-           il comportamento prima della modifica.
-        3. Crea un branch dedicato `agent/refactor-${{ github.event.issue.number }}`.
-        4. Nella descrizione della PR includi una sezione "Prima / Dopo"
-           con i pattern principali toccati e "Closes #${{ github.event.issue.number }}".
-        5. Apri una PR "refactor:" e commenta la issue con il link.
-        Non introdurre nuove dipendenze o feature.
-
-        Per azioni difficili da invertire o distruttive (force-push,
-        reset --hard, rm -rf) non procedere: segnala nella PR e lascia
-        decidere all'umano. Non aggirare i check con --no-verify.

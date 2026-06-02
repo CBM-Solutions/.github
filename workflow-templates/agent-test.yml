@@ -16,27 +16,19 @@ jobs:
       issues: write
       id-token: write
       actions: read
-    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@40880453a64d22c662f8b8f0d4138a15f619d594
+    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@887012fd5c3e1f3b45bcaa8cbb33d1603cf24e56
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       MASTER_BOARD_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
     with:
       is_pr_creator: true
       branch_prefix: test
+      use_skills: true
       allowed_tools: "Edit,Write,Read,MultiEdit,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(git:*),Bash(npm:*),Bash(pnpm:*),Bash(yarn:*),Bash(pytest:*),Bash(go test:*),Bash(cargo test:*),Bash(node:*)"
       prompt: |
+        /agent-test
+
         REPO: ${{ github.repository }}
         ISSUE #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
 
         ${{ github.event.issue.body }}
-
-        Genera o sistema i test per l'area indicata nella issue:
-        1. Identifica il framework di test del repo (package.json, pyproject, ecc.).
-        2. Aggiungi/aggiorna i test mantenendo lo stile esistente.
-        3. Esegui la suite di test e includi l'esito nel corpo della PR. Se i test
-           falliscono, NON presentare la PR come pronta: segnala il problema.
-        4. Crea un branch dedicato `agent/test-${{ github.event.issue.number }}`.
-        5. Apri una PR "test:" con descrizione che include
-           "Closes #${{ github.event.issue.number }}" e commenta la issue.
-        Non modificare il codice di produzione se non strettamente necessario
-        per rendere i test eseguibili.

@@ -16,7 +16,7 @@ jobs:
       issues: write
       id-token: write
       actions: read
-    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@40880453a64d22c662f8b8f0d4138a15f619d594
+    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@887012fd5c3e1f3b45bcaa8cbb33d1603cf24e56
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       MASTER_BOARD_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
@@ -24,33 +24,12 @@ jobs:
       model: claude-sonnet-4-6
       is_pr_creator: true
       branch_prefix: maintain
+      use_skills: true
       allowed_tools: "Edit,Write,Read,MultiEdit,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(git:*),Bash(npm:*),Bash(pnpm:*),Bash(yarn:*),Bash(node:*)"
       prompt: |
+        /agent-maintain
+
         REPO: ${{ github.repository }}
         ISSUE #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
 
         ${{ github.event.issue.body }}
-
-        Sei un ingegnere focalizzato sulla manutenibilità. Riduci il debito
-        tecnico nell'area indicata nella issue.
-
-        <metodo>
-        1. Leggi i file rilevanti prima di agire: non speculare sul codice.
-        2. Intervieni su: naming poco chiaro, dead code, duplicazione,
-           funzioni troppo lunghe/complesse, struttura dei moduli.
-        3. Preserva il comportamento osservabile: mantieni i test esistenti
-           verdi. Se serve, fissa il comportamento con un test prima di toccare.
-        4. Crea un branch dedicato `agent/maintain-${{ github.event.issue.number }}`, apri una PR
-           "maintain:" con descrizione che include "Closes #${{ github.event.issue.number }}"
-           e una sezione "Prima / Dopo".
-        5. Commenta la issue con il link alla PR.
-        </metodo>
-
-        <vincoli>
-        - Anti-overengineering: NON aggiungere feature, astrazioni o
-          configurabilità non richieste. Il refactor di manutenibilità non
-          deve cambiare il perimetro funzionale.
-        - Non aggiungere commenti/docstring a codice che non hai toccato.
-        - Mantieni i diff piccoli e reviewabili; se l'area è grande, proponi
-          un primo passo incrementale invece di riscrivere tutto.
-        </vincoli>

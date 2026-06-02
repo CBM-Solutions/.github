@@ -18,7 +18,7 @@ jobs:
       issues: write
       id-token: write
       actions: read
-    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@40880453a64d22c662f8b8f0d4138a15f619d594
+    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@887012fd5c3e1f3b45bcaa8cbb33d1603cf24e56
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       MASTER_BOARD_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
@@ -26,27 +26,14 @@ jobs:
       model: claude-opus-4-8
       fetch_depth: 0
       enable_retry: true
+      use_skills: true
       allowed_tools: "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(git log:*),Bash(git diff:*),Bash(git show:*)"
       prompt: |
+        /agent-review
+
         REPO: ${{ github.repository }}
         EVENTO: ${{ github.event_name }}
         PR #${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}
         ISSUE #${{ github.event.issue.number }} ${{ github.event.issue.title }}
 
-        Esegui code review focalizzata su:
-        - bug di correttezza ed edge case
-        - rischi di sicurezza (injection, auth, secret, input non validato)
-        - regressioni di performance evidenti
-        - chiarezza e manutenibilità solo se rilevante
-
-        <reporting>
-        Segnala OGNI problema che trovi, anche incerto o a bassa severità:
-        non auto-filtrare per importanza. Per ciascun finding indica confidence
-        e severità stimata, così un umano può fare il triage a valle.
-        Riporta solo bug reali (comportamento errato, test che fallirebbe,
-        risultato fuorviante); ometti le pure preferenze di stile.
-        </reporting>
-
-        Output: un singolo commento strutturato sull'oggetto etichettato
-        (PR o issue), con sezioni "Bloccanti", "Da valutare", "Note minori".
-        Non aprire PR, non modificare codice.
+        ${{ github.event.issue.body }}

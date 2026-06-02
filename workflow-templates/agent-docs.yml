@@ -16,26 +16,19 @@ jobs:
       issues: write
       id-token: write
       actions: read
-    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@40880453a64d22c662f8b8f0d4138a15f619d594
+    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@887012fd5c3e1f3b45bcaa8cbb33d1603cf24e56
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       MASTER_BOARD_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
     with:
       is_pr_creator: true
       branch_prefix: docs
+      use_skills: true
       allowed_tools: "Edit,Write,Read,MultiEdit,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(git:*)"
       prompt: |
+        /agent-docs
+
         REPO: ${{ github.repository }}
         ISSUE #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
 
         ${{ github.event.issue.body }}
-
-        Aggiorna la documentazione (README, /docs, commenti di alto livello)
-        in base al contesto della issue:
-        1. Identifica i file di documentazione rilevanti.
-        2. Applica modifiche chiare, senza alterare la logica del codice.
-        3. Crea un branch dedicato `agent/docs-${{ github.event.issue.number }}`.
-        4. Apri una PR "docs:" verso il branch di default con descrizione
-           che include "Closes #${{ github.event.issue.number }}".
-        5. Commenta la issue con il link alla PR.
-        Non scrivere documentazione speculativa: solo ciò che la issue richiede.

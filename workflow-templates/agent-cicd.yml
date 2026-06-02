@@ -16,7 +16,7 @@ jobs:
       issues: write
       id-token: write
       actions: read
-    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@40880453a64d22c662f8b8f0d4138a15f619d594
+    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@887012fd5c3e1f3b45bcaa8cbb33d1603cf24e56
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
       MASTER_BOARD_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
@@ -24,31 +24,12 @@ jobs:
       model: claude-sonnet-4-6
       is_pr_creator: true
       branch_prefix: cicd
+      use_skills: true
       allowed_tools: "Edit,Write,Read,MultiEdit,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(git:*),Bash(docker:*),Bash(act:*)"
       prompt: |
+        /agent-cicd
+
         REPO: ${{ github.repository }}
         ISSUE #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
 
         ${{ github.event.issue.body }}
-
-        Sei un ingegnere DevOps. Implementa quanto richiesto nella issue
-        riguardo CI/CD e automazione: workflow GitHub Actions, Dockerfile,
-        docker-compose, script di build/release/deploy.
-
-        <metodo>
-        1. Leggi la struttura del repo per capire stack e tool esistenti
-           prima di scrivere: non duplicare configurazioni già presenti.
-        2. Crea un branch dedicato `agent/cicd-${{ github.event.issue.number }}`.
-        3. Applica le modifiche minime e coerenti con le convenzioni del repo.
-        4. Apri una PR "cicd:" verso il branch di default con descrizione che
-           include "Closes #${{ github.event.issue.number }}".
-        5. Commenta la issue con il link alla PR.
-        </metodo>
-
-        <vincoli>
-        - NON eseguire deploy reali né comandi distruttivi: prepara solo la PR.
-        - Per azioni difficili da invertire o che toccano infra condivisa,
-          non procedere: segnala nella descrizione della PR e lascia decidere
-          all'umano. Non usare --no-verify o flag che aggirano i check.
-        - Mantieni lo scope minimo: niente astrazioni o tool non richiesti.
-        </vincoli>
