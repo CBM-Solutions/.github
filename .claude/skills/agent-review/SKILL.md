@@ -20,8 +20,12 @@ REPO, evento e riferimenti all'oggetto etichettato. Se è una PR leggi il diff (
 ## Reporting (report-everything)
 Segnala OGNI problema, anche incerto o a bassa severità: non auto-filtrare per importanza — è l'umano a fare triage. Per ciascun finding indica **confidence** e **severità stimata**, **file:riga** e una correzione proposta. Riporta solo bug reali (comportamento errato, test che fallirebbe, risultato fuorviante); ometti le pure preferenze di stile.
 
-## Output — usa sempre questo formato
-Un **singolo commento** sull'oggetto etichettato:
+## Output — pubblica SEMPRE un commento (è il deliverable)
+Non limitarti a scrivere la review nella risposta: **pubblicala** con il tool:
+- evento `issues`: `gh issue comment <numero> --body "..."`
+- evento `pull_request`: `gh pr comment <numero> --body "..."`
+
+Il **corpo** del commento segue questo formato:
 ```
 ## 🔍 Code review
 
