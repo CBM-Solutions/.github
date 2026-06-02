@@ -1,0 +1,187 @@
+name: Agent Runner (reusable)
+
+# Reusable workflow centralizzato per tutti gli agenti Claude della flotta.
+# Incapsula: checkout → claude-code-action (con retry opzionale) → pipeline
+# Master Board (add-to-project + Status=Test + reviewer round-robin).
+# I caller (workflow-templates/agent-*.yml nei repo target) passano solo gli
+# input specifici dell'agente. Unico punto per pin SHA, logica board e disallowedTools.
+#
+# Richiamato cross-repo:
+#   uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@<sha>
+#
+# Variabili attese (con fallback): vars.MASTER_BOARD_PROJECT_URL/PROJECT_ID/
+# STATUS_FIELD_ID/STATUS_TEST_ID, vars.AGENT_REVIEWERS.
+# Secret attesi (via secrets: inherit): CLAUDE_CODE_OAUTH_TOKEN, MASTER_BOARD_TOKEN.
+
+on:
+  workflow_call:
+    inputs:
+      prompt:
+        description: Prompt completo per l'agente (interpolato dal caller).
+        type: string
+        required: true
+      allowed_tools:
+        description: Valore per --allowedTools.
+        type: string
+        required: true
+      model:
+        description: Modello (es. claude-opus-4-8). Vuoto = default dell'action.
+        type: string
+        required: false
+        default: ""
+      disallowed_tools:
+        description: Valore per --disallowedTools (default = blocklist standard).
+        type: string
+        required: false
+        default: "Bash(ps:*),Bash(cat:*),Bash(env:*),Bash(printenv:*),Bash(curl:*),Bash(wget:*),Bash(eval:*),Bash(export:*),Bash(nc:*),Bash(base64:*)"
+      is_pr_creator:
+        description: Se true esegue la pipeline find-PR/Status=Test/reviewer.
+        type: boolean
+        required: false
+        default: false
+      branch_prefix:
+        description: Prefisso branch dell'agente (es. fix) per trovare la PR.
+        type: string
+        required: false
+        default: ""
+      fetch_depth:
+        description: fetch-depth del checkout (0 = full history per i diff).
+        type: number
+        required: false
+        default: 1
+      enable_retry:
+        description: Se true ritenta una volta l'action su failure (solo agenti idempotenti/read-only).
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: ${{ inputs.fetch_depth }}
+
+      # Costruisce claude_args includendo --model solo se valorizzato.
+      - name: Prepara claude_args
+        id: args
+        env:
+          MODEL: ${{ inputs.model }}
+          ALLOWED: ${{ inputs.allowed_tools }}
+          DISALLOWED: ${{ inputs.disallowed_tools }}
+        run: |
+          {
+            echo 'value<<CLAUDE_ARGS_EOF'
+            if [ -n "$MODEL" ]; then echo "--model $MODEL"; fi
+            printf '%s\n' "--disallowedTools \"$DISALLOWED\""
+            printf '%s\n' "--allowedTools \"$ALLOWED\""
+            echo 'CLAUDE_ARGS_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Claude
+        id: claude
+        continue-on-error: ${{ inputs.enable_retry }}
+        uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1.0.133
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: ${{ steps.args.outputs.value }}
+          prompt: ${{ inputs.prompt }}
+
+      # Retry singolo con backoff, solo per agenti idempotenti (enable_retry).
+      - name: Attendi prima del retry
+        if: ${{ inputs.enable_retry && steps.claude.outcome == 'failure' }}
+        run: sleep 60
+
+      - name: Claude (retry)
+        id: claude_retry
+        if: ${{ inputs.enable_retry && steps.claude.outcome == 'failure' }}
+        uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1.0.133
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: ${{ steps.args.outputs.value }}
+          prompt: ${{ inputs.prompt }}
+
+      # === Master Board: aggiungi issue/PR (tutti gli agenti) ===
+      - name: Aggiungi a Master Board
+        id: add-to-project
+        if: ${{ steps.claude.outcome == 'success' || steps.claude_retry.outcome == 'success' }}
+        continue-on-error: true
+        uses: actions/add-to-project@244f685bbc3b7adfa8466e08b698b5577571133e # v1.0.2
+        with:
+          project-url: ${{ vars.MASTER_BOARD_PROJECT_URL || 'https://github.com/orgs/CBM-Solutions/projects/4' }}
+          github-token: ${{ secrets.MASTER_BOARD_TOKEN }}
+
+      # === Pipeline PR-creator: trova PR → Status=Test → reviewer ===
+      - name: Trova PR aperta dall'agente
+        id: find-pr
+        if: ${{ inputs.is_pr_creator && (steps.claude.outcome == 'success' || steps.claude_retry.outcome == 'success') }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: agent/${{ inputs.branch_prefix }}-${{ github.event.issue.number }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          PR_NUM=$(gh pr list --repo "$REPO" \
+            --state open --head "$BRANCH_NAME" --limit 1 \
+            --json number --jq '.[0].number // ""')
+          if [ -z "$PR_NUM" ]; then
+            PR_NUM=$(gh pr list --repo "$REPO" \
+              --author "app/claude" --state open --search "\"Closes #${ISSUE_NUM}\" in:body" --limit 1 \
+              --json number --jq '.[0].number // ""')
+          fi
+          echo "pr_num=$PR_NUM" >> "$GITHUB_OUTPUT"
+          if [ -n "$PR_NUM" ]; then echo "Trovata PR #$PR_NUM"; else echo "Nessuna PR da app/claude"; fi
+
+      - name: Setta Status = Test sul Master Board
+        if: ${{ inputs.is_pr_creator && steps.find-pr.outputs.pr_num != '' && steps.add-to-project.outputs.itemId }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
+          PROJECT_ID: ${{ vars.MASTER_BOARD_PROJECT_ID || 'PVT_kwDOEAw5d84BVmVA' }}
+          FIELD_ID: ${{ vars.MASTER_BOARD_STATUS_FIELD_ID || 'PVTSSF_lADOEAw5d84BVmVAzhRBE38' }}
+          TEST_OPTION_ID: ${{ vars.MASTER_BOARD_STATUS_TEST_ID || 'b11e1636' }}
+          ITEM_ID: ${{ steps.add-to-project.outputs.itemId }}
+        run: |
+          gh api graphql -f query='
+            mutation($project: ID!, $item: ID!, $field: ID!, $value: String!) {
+              updateProjectV2ItemFieldValue(input: {
+                projectId: $project, itemId: $item,
+                fieldId: $field, value: { singleSelectOptionId: $value }
+              }) { projectV2Item { id } }
+            }' \
+            -f project="$PROJECT_ID" \
+            -f item="$ITEM_ID" \
+            -f field="$FIELD_ID" \
+            -f value="$TEST_OPTION_ID"
+
+      - name: Auto-assign reviewer
+        if: ${{ inputs.is_pr_creator && steps.find-pr.outputs.pr_num != '' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUM: ${{ steps.find-pr.outputs.pr_num }}
+          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          REVIEWERS_CSV: ${{ vars.AGENT_REVIEWERS || 'montafra,K0enjy,Belletz-28' }}
+          REPO: ${{ github.repository }}
+        run: |
+          IFS=',' read -ra REVIEWERS <<< "$REVIEWERS_CSV"
+          IDX=$((PR_NUM % ${#REVIEWERS[@]}))
+          REVIEWER=""
+          for OFFSET in $(seq 0 $((${#REVIEWERS[@]} - 1))); do
+            CANDIDATE=$(echo "${REVIEWERS[$(((IDX + OFFSET) % ${#REVIEWERS[@]}))]}" | xargs)
+            if [ -n "$CANDIDATE" ] && [ "$CANDIDATE" != "$ISSUE_AUTHOR" ]; then
+              REVIEWER="$CANDIDATE"
+              break
+            fi
+          done
+          if [ -z "$REVIEWER" ]; then echo "::warning::Nessun reviewer assegnabile"; exit 0; fi
+          echo "Reviewer assegnato: $REVIEWER per PR #$PR_NUM (issue di $ISSUE_AUTHOR)"
+          gh pr edit "$PR_NUM" --repo "$REPO" --add-reviewer "$REVIEWER"
