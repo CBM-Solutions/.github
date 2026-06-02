@@ -11,7 +11,8 @@ name: Agent Runner (reusable)
 #
 # Variabili attese (con fallback): vars.MASTER_BOARD_PROJECT_URL/PROJECT_ID/
 # STATUS_FIELD_ID/STATUS_TEST_ID, vars.AGENT_REVIEWERS.
-# Secret attesi (via secrets: inherit): CLAUDE_CODE_OAUTH_TOKEN, MASTER_BOARD_TOKEN.
+# Secret attesi (passati esplicitamente dal caller): CLAUDE_CODE_OAUTH_TOKEN, MASTER_BOARD_TOKEN.
+# Skills: se use_skills=true, copia .claude/skills da CBM-Solutions/.github@skills_ref nel workspace.
 
 on:
   workflow_call:
@@ -54,6 +55,16 @@ on:
         type: boolean
         required: false
         default: false
+      use_skills:
+        description: Se true carica le Agent Skills centrali di .github nel workspace (invocate con /agent-<nome> dal prompt).
+        type: boolean
+        required: false
+        default: false
+      skills_ref:
+        description: Ref (SHA) di CBM-Solutions/.github da cui prelevare le skills.
+        type: string
+        required: false
+        default: "0788361d409044c29395bcd100122dc474abf10f"
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN:
         description: Token OAuth dell'abbonamento Claude Max.
@@ -72,6 +83,26 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: ${{ inputs.fetch_depth }}
+
+      # Carica le Agent Skills centrali (prompt fuori dallo YAML), copiandole
+      # nel workspace prima dello step Claude (l'action le scopre all'avvio).
+      - name: Checkout skills centrali
+        if: ${{ inputs.use_skills }}
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          repository: CBM-Solutions/.github
+          ref: ${{ inputs.skills_ref }}
+          path: .fleet-skills
+          persist-credentials: false
+
+      - name: Installa skills nel workspace
+        if: ${{ inputs.use_skills }}
+        run: |
+          mkdir -p .claude/skills
+          cp -r .fleet-skills/.claude/skills/* .claude/skills/
+          # Esclusione locale: i PR-creator non devono committare le skill copiate.
+          printf '%s\n' '.claude/skills/' '.fleet-skills/' >> .git/info/exclude
+          echo "Skills installate:"; ls .claude/skills
 
       # Costruisce claude_args includendo --model solo se valorizzato.
       - name: Prepara claude_args
