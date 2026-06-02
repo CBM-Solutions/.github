@@ -23,6 +23,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Lint GitHub Actions workflows
+        env:
+          # SC2016: GraphQL/jq payloads use single quotes intentionally ($var are GraphQL/jq vars, not shell).
+          # SC2129: style-only suggestion for grouped redirects; not worth failing CI.
+          SHELLCHECK_OPTS: --exclude=SC2016,SC2129
         run: |
           go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           "$(go env GOPATH)/bin/actionlint" -color \
