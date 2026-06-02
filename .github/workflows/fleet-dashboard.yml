@@ -1,0 +1,136 @@
+name: Fleet Dashboard
+
+# Aggrega le run degli agenti Claude (workflow "Agent *") su tutti i repo
+# dell'organizzazione, scrive OBSERVABILITY.md e posta un riepilogo su Telegram.
+# Singleton org-ops: gira solo in questo repo (.github). Serverless, zero infra.
+#
+# Secret richiesti su QUESTO repo (.github):
+#   - MASTER_BOARD_TOKEN : PAT con scope repo (lettura repo + Actions della org)
+#   - TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID : opzionali (se assenti, salta l'invio)
+
+on:
+  schedule:
+    - cron: "0 7 * * *"   # ogni giorno 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fleet-dashboard
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ORG: CBM-Solutions
+      GH_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
+      WINDOW_DAYS: "30"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Aggrega run degli agenti e genera OBSERVABILITY.md
+        run: |
+          set -euo pipefail
+          SINCE=$(date -u -d "-${WINDOW_DAYS} days" +%Y-%m-%dT%H:%M:%SZ)
+          OUT=OBSERVABILITY.md
+          TMP=$(mktemp -d)
+
+          repos=$(gh repo list "$ORG" --no-archived --limit 200 --json name --jq '.[].name')
+
+          : > "$TMP/rows.tsv"   # repo \t agent \t conclusion \t duration_s
+          for repo in $repos; do
+            # Solo run dei workflow che iniziano con "Agent " o "Fleet"
+            gh run list --repo "$ORG/$repo" --limit 100 \
+              --created ">$SINCE" \
+              --json workflowName,conclusion,createdAt,updatedAt \
+              --jq '.[] | select(.workflowName|test("^Agent |^Fleet")) |
+                    [ "'"$repo"'", .workflowName, (.conclusion // "running"),
+                      (( (.updatedAt|fromdateiso8601) - (.createdAt|fromdateiso8601) )|tostring) ] | @tsv' \
+              >> "$TMP/rows.tsv" 2>/dev/null || echo "skip $repo (nessun workflow/permesso)"
+          done
+
+          total=$(wc -l < "$TMP/rows.tsv" | tr -d ' ')
+          succ=$(awk -F'\t' '$3=="success"' "$TMP/rows.tsv" | wc -l | tr -d ' ')
+          fail=$(awk -F'\t' '$3=="failure"' "$TMP/rows.tsv" | wc -l | tr -d ' ')
+          skip=$(awk -F'\t' '$3=="skipped"' "$TMP/rows.tsv" | wc -l | tr -d ' ')
+          eff=$((total - skip))
+          rate="n/a"
+          if [ "$eff" -gt 0 ]; then rate="$(( succ * 100 / eff ))%"; fi
+
+          {
+            echo "# 📊 Fleet Dashboard — agenti Claude (ultimi ${WINDOW_DAYS} giorni)"
+            echo ""
+            echo "_Aggiornato: $(date -u +'%Y-%m-%d %H:%M UTC') · org \`${ORG}\`_"
+            echo ""
+            echo "## Riepilogo"
+            echo ""
+            echo "| Metrica | Valore |"
+            echo "|---|---|"
+            echo "| Run totali (escl. skipped) | ${eff} |"
+            echo "| ✅ Success | ${succ} |"
+            echo "| 🔴 Failure | ${fail} |"
+            echo "| Success rate | ${rate} |"
+            echo "| ⏭️ Skipped (label non-match) | ${skip} |"
+            echo ""
+            echo "## Per agente"
+            echo ""
+            echo "| Agente | Run | Success | Failure | Durata media (s) |"
+            echo "|---|---|---|---|---|"
+            awk -F'\t' '$3!="skipped" {
+              cnt[$2]++; if($3=="success")s[$2]++; if($3=="failure")f[$2]++; dur[$2]+=$4
+            } END {
+              for (a in cnt) printf "| %s | %d | %d | %d | %d |\n", a, cnt[a], s[a]+0, f[a]+0, (cnt[a]?dur[a]/cnt[a]:0)
+            }' "$TMP/rows.tsv" | sort
+            echo ""
+            echo "## Per repository"
+            echo ""
+            echo "| Repo | Run | Success | Failure |"
+            echo "|---|---|---|---|"
+            awk -F'\t' '$3!="skipped" {
+              cnt[$1]++; if($3=="success")s[$1]++; if($3=="failure")f[$1]++
+            } END {
+              for (r in cnt) printf "| %s | %d | %d | %d |\n", r, cnt[r], s[r]+0, f[r]+0
+            }' "$TMP/rows.tsv" | sort
+            echo ""
+            echo "---"
+            echo "_Nota: il costo per-run (\`total_cost_usd\`) non è incluso in v1 perché"
+            echo "richiede il download dei log di ogni run. Da valutare come enhancement._"
+          } > "$OUT"
+
+          echo "TOTAL=$eff" >> "$GITHUB_ENV"
+          echo "SUCC=$succ" >> "$GITHUB_ENV"
+          echo "FAIL=$fail" >> "$GITHUB_ENV"
+          echo "RATE=$rate" >> "$GITHUB_ENV"
+
+      - name: Commit dashboard se cambiato
+        run: |
+          set -e
+          if git diff --quiet -- OBSERVABILITY.md; then
+            echo "Nessuna variazione in OBSERVABILITY.md"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add OBSERVABILITY.md
+            git commit -m "chore: aggiorna Fleet Dashboard [skip ci]"
+            git push
+          fi
+
+      - name: Riepilogo su Telegram (FinOps/observability)
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DASH_URL: ${{ github.server_url }}/${{ github.repository }}/blob/${{ github.event.repository.default_branch }}/OBSERVABILITY.md
+        run: |
+          if [ -z "${BOT_TOKEN:-}" ] || [ -z "${CHAT_ID:-}" ]; then
+            echo "::warning::TELEGRAM secrets non configurati, salto invio"; exit 0
+          fi
+          MSG="📊 *Fleet Dashboard* (${WINDOW_DAYS}gg)%0A%0ARun: *${TOTAL}* · ✅ ${SUCC} · 🔴 ${FAIL} · rate ${RATE}"
+          KEYBOARD=$(printf '{"inline_keyboard":[[{"text":"📈 Apri dashboard","url":"%s"}]]}' "$DASH_URL")
+          curl -sS --fail-with-body \
+            "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${CHAT_ID}" \
+            --data-urlencode "parse_mode=Markdown" \
+            --data-urlencode "text=${MSG}" \
+            --data-urlencode "reply_markup=${KEYBOARD}"

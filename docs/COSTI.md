@@ -12,6 +12,28 @@ Esecuzione invece avviene sui **runner GitHub Actions effimeri**:
 
 ---
 
+## Controllo costi real-time (FinOps serverless)
+
+### GitHub Budgets — guardrail sui minuti Actions
+GitHub Budgets dà controllo di spesa **real-time senza alcun server**:
+- alert automatici a **75% / 90% / 100%** del budget;
+- alert sulle quote incluse a 90% / 100%;
+- **hard-stop "prevent usage"** sui prodotti metered (Actions): una volta raggiunta la soglia, i workflow non partono più.
+
+Setup (una volta, a livello org): **Settings → Billing → Budgets and alerts → New budget** → prodotto **Actions** → soglia + abilita "prevent usage" per i repo privati. È il guardrail contro l'esaurimento minuti già sperimentato sul sandbox.
+
+> Repo **pubblici** = minuti standard-runner **gratis e illimitati** (esclusi anche dal platform charge $0.002/min di gen-2026). Dove possibile, tenere gli agenti su repo pubblici azzera il problema minuti.
+
+### Fleet Dashboard — report costi/run
+Il workflow `fleet-dashboard.yml` (vedi `OBSERVABILITY.md`) aggrega run, success-rate e durate degli agenti e posta un riepilogo su Telegram. È il "report FinOps" proxy del sistema.
+
+### ⚠️ Gap: visibilità quota Claude Max
+**Non esiste (verificato, 2026) un meccanismo pubblico di telemetria real-time sul consumo della quota/rate-limit dell'abbonamento Max via token OAuth.** A differenza dell'API-key (fatturata a token, tracciabile), il consumo Max non è ispezionabile programmaticamente. Conseguenza: il monitoraggio dei costi-agente si basa su **proxy** — numero di run, durate, e `total_cost_usd` stimato nei log della action — non su telemetria diretta della quota.
+
+Se in futuro servisse precisione sui costi (alto volume), l'opzione è un agente dedicato su **API-key** (a token, tracciabile) per quei task specifici, accettando il costo marginale.
+
+---
+
 ## Cost reference per agente (Sonnet 4.6, default)
 
 Dati misurati sul repo `agent-sandbox` durante validazione iniziale.

@@ -26,6 +26,7 @@ jobs:
           WF_NAME: ${{ github.event.workflow_run.name }}
           REPO: ${{ github.repository }}
           RUN_URL: ${{ github.event.workflow_run.html_url }}
+          ACTIONS_URL: ${{ github.server_url }}/${{ github.repository }}/actions
           BRANCH: ${{ github.event.workflow_run.head_branch }}
           ACTOR: ${{ github.event.workflow_run.triggering_actor.login }}
         run: |
@@ -39,13 +40,15 @@ jobs:
           *Repo:* \`${REPO}\`
           *Branch:* \`${BRANCH}\`
           *Triggered by:* ${ACTOR}
-
-          [Apri run su GitHub](${RUN_URL})
           EOF
           )
+          # Inline keyboard con URL-button (serverless: nessun callback/listener)
+          KEYBOARD=$(printf '{"inline_keyboard":[[{"text":"🔴 Apri run","url":"%s"},{"text":"📋 Actions","url":"%s"}]]}' \
+            "$RUN_URL" "$ACTIONS_URL")
           curl -sS --fail-with-body \
             "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=${CHAT_ID}" \
             --data-urlencode "parse_mode=Markdown" \
             --data-urlencode "disable_web_page_preview=true" \
-            --data-urlencode "text=${MESSAGE}"
+            --data-urlencode "text=${MESSAGE}" \
+            --data-urlencode "reply_markup=${KEYBOARD}"
