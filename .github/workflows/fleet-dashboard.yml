@@ -59,6 +59,20 @@ jobs:
           rate="n/a"
           if [ "$eff" -gt 0 ]; then rate="$(( succ * 100 / eff ))%"; fi
 
+          # Stima costo-equivalente: run (non-skipped) x costo medio misurato per agente
+          # (vedi docs/COSTI.md). NB: su abbonamento Max NON è fatturato a token —
+          # è un proxy utile solo per capire l'ordine di grandezza / pianificare un
+          # eventuale passaggio a cost-based (API key).
+          EST=$(awk -F'\t' '
+            BEGIN{
+              c["Agent Summary"]=0.02; c["Agent Review"]=0.15; c["Agent Security"]=0.20;
+              c["Agent Fix"]=0.10; c["Agent Docs"]=0.07; c["Agent Test"]=0.20;
+              c["Agent Refactor"]=0.14; c["Agent CICD"]=0.14; c["Agent IaC"]=0.10;
+              c["Agent Maintain"]=0.17;
+            }
+            $3!="skipped"{ t += (($2 in c)?c[$2]:0.10) }
+            END{ printf "%.2f", t+0 }' "$TMP/rows.tsv")
+
           {
             echo "# 📊 Fleet Dashboard — agenti Claude (ultimi ${WINDOW_DAYS} giorni)"
             echo ""
@@ -73,15 +87,24 @@ jobs:
             echo "| 🔴 Failure | ${fail} |"
             echo "| Success rate | ${rate} |"
             echo "| ⏭️ Skipped (label non-match) | ${skip} |"
+            echo "| 💸 Stima costo-equivalente | \$${EST} _(proxy, non fatturato su Max)_ |"
             echo ""
             echo "## Per agente"
             echo ""
-            echo "| Agente | Run | Success | Failure | Durata media (s) |"
-            echo "|---|---|---|---|---|"
-            awk -F'\t' '$3!="skipped" {
-              cnt[$2]++; if($3=="success")s[$2]++; if($3=="failure")f[$2]++; dur[$2]+=$4
+            echo "| Agente | Run | Success | Failure | Durata media (s) | Stima costo |"
+            echo "|---|---|---|---|---|---|"
+            awk -F'\t' '
+            BEGIN{
+              c["Agent Summary"]=0.02; c["Agent Review"]=0.15; c["Agent Security"]=0.20;
+              c["Agent Fix"]=0.10; c["Agent Docs"]=0.07; c["Agent Test"]=0.20;
+              c["Agent Refactor"]=0.14; c["Agent CICD"]=0.14; c["Agent IaC"]=0.10;
+              c["Agent Maintain"]=0.17;
+            }
+            $3!="skipped" {
+              cnt[$2]++; if($3=="success")s[$2]++; if($3=="failure")f[$2]++; dur[$2]+=$4;
+              cost[$2]+= (($2 in c)?c[$2]:0.10)
             } END {
-              for (a in cnt) printf "| %s | %d | %d | %d | %d |\n", a, cnt[a], s[a]+0, f[a]+0, (cnt[a]?dur[a]/cnt[a]:0)
+              for (a in cnt) printf "| %s | %d | %d | %d | %d | $%.2f |\n", a, cnt[a], s[a]+0, f[a]+0, (cnt[a]?dur[a]/cnt[a]:0), cost[a]+0
             }' "$TMP/rows.tsv" | sort
             echo ""
             echo "## Per repository"
@@ -103,6 +126,7 @@ jobs:
           echo "SUCC=$succ" >> "$GITHUB_ENV"
           echo "FAIL=$fail" >> "$GITHUB_ENV"
           echo "RATE=$rate" >> "$GITHUB_ENV"
+          echo "EST=$EST" >> "$GITHUB_ENV"
 
       - name: Commit dashboard se cambiato
         run: |
@@ -126,7 +150,7 @@ jobs:
           if [ -z "${BOT_TOKEN:-}" ] || [ -z "${CHAT_ID:-}" ]; then
             echo "::warning::TELEGRAM secrets non configurati, salto invio"; exit 0
           fi
-          MSG="📊 *Fleet Dashboard* (${WINDOW_DAYS}gg)%0A%0ARun: *${TOTAL}* · ✅ ${SUCC} · 🔴 ${FAIL} · rate ${RATE}"
+          MSG="📊 *Fleet Dashboard* (${WINDOW_DAYS}gg)%0A%0ARun: *${TOTAL}* · ✅ ${SUCC} · 🔴 ${FAIL} · rate ${RATE}%0A💸 stima ~\$${EST} _(proxy, non fatturato su Max)_"
           KEYBOARD=$(printf '{"inline_keyboard":[[{"text":"📈 Apri dashboard","url":"%s"}]]}' "$DASH_URL")
           curl -sS --fail-with-body \
             "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
