@@ -1,0 +1,55 @@
+name: Template Validation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - "workflow-templates/**"
+      - ".github/ISSUE_TEMPLATE/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/**"
+      - "workflow-templates/**"
+      - ".github/ISSUE_TEMPLATE/**"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lint GitHub Actions workflows
+        env:
+          # SC2016: GraphQL/jq payloads use single quotes intentionally ($var are GraphQL/jq vars, not shell).
+          # SC2129: style-only suggestion for grouped redirects; not worth failing CI.
+          SHELLCHECK_OPTS: --exclude=SC2016,SC2129
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          "$(go env GOPATH)/bin/actionlint" -color \
+            .github/workflows/*.yml \
+            workflow-templates/agent-*.yml \
+            workflow-templates/labels-bootstrap.yml \
+            workflow-templates/notify-on-failure.yml
+
+      - name: Validate YAML syntax
+        run: |
+          ruby -e 'require "yaml"; ARGV.each { |f| YAML.load_file(f); puts "ok #{f}" }' \
+            .github/ISSUE_TEMPLATE/*.yml \
+            .github/workflows/*.yml \
+            workflow-templates/*.yml
+
+      - name: Validate workflow template properties JSON
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          for path in sorted(Path("workflow-templates").glob("*.properties.json")):
+              with path.open(encoding="utf-8") as handle:
+                  json.load(handle)
+              print(f"ok {path}")
+          PY

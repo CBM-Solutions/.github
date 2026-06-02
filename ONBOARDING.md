@@ -2,7 +2,7 @@
 
 Benvenuto. Questo documento ti porta da zero a operativo in **circa 15 minuti**. È una checklist d'azione — la spiegazione completa di come funziona il sistema sta in [`docs/AGENTI.md`](docs/AGENTI.md), leggila dopo aver completato il setup.
 
-> **Cos'è in due righe:** ogni repo della org può attivare 6 agenti Claude (fix, review, docs, test, refactor, summary) applicando un'etichetta `agent:*` a una issue o PR. L'esecuzione gira su runner GitHub, autenticata sull'abbonamento Claude Max, e si integra con il **Master Board** (Project v2 #4) e con notifiche Telegram.
+> **Cos'è in due righe:** ogni repo della org può attivare 10 agenti Claude (`fix`, `review`, `docs`, `test`, `refactor`, `summary`, `security`, `cicd`, `iac`, `maintain`) applicando un'etichetta `agent:*` a una issue o PR. L'esecuzione gira su runner GitHub, autenticata sull'abbonamento Claude Max, e si integra con il **Master Board** (Project v2 #4) e con notifiche Telegram.
 
 ---
 

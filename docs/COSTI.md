@@ -65,16 +65,16 @@ claude_args: |
 |---|---|
 | `claude-haiku-4-5` | `summary`, `review` su PR piccole, task ripetitivi a basso valore |
 | `claude-sonnet-4-6` (default) | `fix`, `docs`, `test`, `refactor` — best balance |
-| `claude-opus-4-7` | Cambi architetturali, debug complessi, una tantum |
+| `claude-opus-4-8` | `review`, `security`, cambi architetturali, debug complessi, una tantum |
 
-**Raccomandazione attuale:** lasciare tutto su Sonnet 4.6 fino a quando i run non superano 50/mese. Sotto quella soglia il margine sui rate limit del Max è ampio.
+**Raccomandazione attuale:** lasciare i PR-creator su Sonnet 4.6, `summary` su Haiku e `review`/`security` su Opus fino a quando i run non superano 50/mese. Sotto quella soglia il margine sui rate limit del Max è ampio.
 
 ---
 
 ## Cosa monitorare
 
 Su **Anthropic Console** (https://console.anthropic.com): consumo del piano Max in % della quota. Se vedi avvicinarti al 70% pensa a:
-- Spostare `summary`/`review` su Haiku
+- Spostare altri task read-only a basso rischio su Haiku
 - Distribuire token su membri diversi (uno per cluster di repo)
 
 Su **GitHub Actions usage** (https://github.com/organizations/CBM-Solutions/settings/billing): minuti consumati sui runner. Soglia di attenzione: 80% del piano.

@@ -18,14 +18,18 @@ Tempo richiesto: **~10 minuti** se hai già i token a portata di mano.
 1. Apri il tuo repo → tab **Actions**.
 2. Click **"New workflow"** → in alto trovi la categoria **"Workflows created by CBM-Solutions"**.
 3. Adotta in quest'ordine, uno alla volta (ogni adozione crea un commit):
-   1. **Bootstrap Agent Labels** — crea le 6 label `agent:*`
+   1. **Bootstrap Agent Labels** — crea le 10 label `agent:*`
    2. **Agent Summary** (read-only, il più sicuro per primo test)
    3. **Agent Fix**
    4. **Agent Review**
    5. **Agent Docs**
    6. **Agent Test**
    7. **Agent Refactor**
-   8. **Notify Agent Failure (Telegram)**
+   8. **Agent Security**
+   9. **Agent CICD**
+   10. **Agent IaC**
+   11. **Agent Maintain**
+   12. **Notify Agent Failure (Telegram)**
 
 Suggerimento: se sai già che non userai mai certi agenti su questo repo, saltali — sempre adottabili in seguito.
 
@@ -44,13 +48,15 @@ Vai su **Settings → Secrets and variables → Actions → New repository secre
 
 > Se ne carichi solo alcuni: gli step relativi falliscono con warning ma il workflow agente nel complesso resta funzionante (tutti gli step di integrazione hanno `continue-on-error: true`).
 
+Variabile opzionale: in **Settings → Secrets and variables → Actions → Variables** puoi impostare `AGENT_REVIEWERS` con una lista comma-separated di reviewer, es. `montafra,K0enjy,Belletz-28`. Se manca, i workflow usano quel default.
+
 ---
 
 ## Step 3 — Eseguire il bootstrap label
 
 1. **Actions → Bootstrap Agent Labels → Run workflow → Run**.
 2. Attendi che termini (10-20 secondi).
-3. Verifica su **Issues → Labels** che ci siano 6 nuove label colorate `agent:fix`, `agent:review`, ecc.
+3. Verifica su **Issues → Labels** che ci siano 10 nuove label colorate `agent:fix`, `agent:review`, ecc.
 
 ---
 

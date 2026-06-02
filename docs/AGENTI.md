@@ -5,7 +5,7 @@ Documento di riferimento per consultazione quotidiana. Per l'onboarding e la pri
 ## Indice
 
 - [Architettura in 30 secondi](#architettura-in-30-secondi)
-- [I 6 agenti in dettaglio](#i-6-agenti-in-dettaglio)
+- [I 10 agenti in dettaglio](#i-10-agenti-in-dettaglio)
 - [Come scrivere una buona issue per un agente](#come-scrivere-una-buona-issue-per-un-agente)
 - [Comportamenti automatici](#comportamenti-automatici)
 - [Limiti, costi, performance](#limiti-costi-performance)
@@ -220,13 +220,18 @@ Quando trigghi un agente, il sistema fa automaticamente:
 
 1. **Esecuzione su runner effimero** GitHub (Ubuntu, 7GB RAM, distrutto a fine job)
 2. **Commento dell'agente** sulla issue/PR target
-3. **PR creata** (per fix/docs/test/refactor) sul branch `<tipo>/<descrizione>`
+3. **PR creata** (per `fix`, `docs`, `test`, `refactor`, `cicd`, `maintain`) sul branch `<tipo>/<descrizione>`
 4. **Aggiunta al Master Board** (Project #4)
 5. **Status = "Test"** se è stata aperta una PR
-6. **Reviewer assegnato round-robin** tra `montafra` / `K0enjy` / `Belletz-28` (evitando l'autore della issue)
+6. **Reviewer assegnato round-robin** dal pool `AGENT_REVIEWERS` (default `montafra,K0enjy,Belletz-28`, evitando l'autore della issue)
 7. **Notifica Telegram** se il workflow fallisce
 
 I passi 4-6 sono `continue-on-error: true`: se uno dei secret di integrazione manca, il workflow non fallisce — solo logga un warning. Quindi gli agenti funzionano anche in setup parziale, ma perdi visibilità sul board.
+
+Configurazione da tenere allineata nei template:
+- Project target: `https://github.com/orgs/CBM-Solutions/projects/4`
+- Status automatico: opzione `Test` del campo `Status` nel Project v2
+- Reviewer pool: variabile repo `AGENT_REVIEWERS`, fallback `montafra,K0enjy,Belletz-28`
 
 ---
 
@@ -285,8 +290,8 @@ Solo chi ha **write access** sul repo. È una guardia nativa di GitHub Actions s
 ### Cosa l'agente può fare
 
 Tutto ciò che il `GITHUB_TOKEN` del runner permette (vedi `permissions:` in ciascun workflow):
-- `fix/docs/test/refactor`: read+write su `contents`, `pull-requests`, `issues`
-- `review/summary`: read su `contents`, write su `pull-requests` e `issues` (per commentare)
+- `fix/docs/test/refactor/cicd/maintain`: read+write su `contents`, `pull-requests`, `issues`
+- `review/summary/security/iac`: read su `contents`, write su `pull-requests` e `issues` (per commentare)
 
 L'agente NON ha:
 - Accesso ai secret oltre quelli esplicitamente passati come env/with
@@ -322,7 +327,11 @@ Se vedi comportamento anomalo da un agente:
 │   ├── agent-test.yml
 │   ├── agent-refactor.yml
 │   ├── agent-summary.yml
-│   ├── labels-bootstrap.yml             ← crea le 6 label
+│   ├── agent-security.yml
+│   ├── agent-cicd.yml
+│   ├── agent-iac.yml
+│   ├── agent-maintain.yml
+│   ├── labels-bootstrap.yml             ← crea le 10 label
 │   ├── labels.yml                       ← definizione dichiarativa
 │   └── notify-on-failure.yml            ← alert Telegram
 ├── .github/ISSUE_TEMPLATE/
