@@ -4,6 +4,8 @@ Benvenuto. Questo documento ti porta da zero a operativo in **circa 15 minuti**.
 
 > **Cos'è in due righe:** ogni repo della org può attivare 10 agenti Claude (`fix`, `review`, `docs`, `test`, `refactor`, `summary`, `security`, `cicd`, `iac`, `maintain`) applicando un'etichetta `agent:*` a una issue o PR. L'esecuzione gira su runner GitHub, autenticata sull'abbonamento Claude Max, e si integra con il **Master Board** (Project v2 #4) e con notifiche Telegram.
 
+> **Architettura (Fase 7):** ogni agente è un *thin caller* che richiama un unico reusable workflow centralizzato (`CBM-Solutions/.github/.github/workflows/agent-runner.yml`) — logica comune, pin SHA e sicurezza in un solo punto. Ogni agente legge `CLAUDE.md` dalla root del repo per grounding (convenzioni + regole di sicurezza).
+
 ---
 
 ## ✅ Checklist personale (10 minuti)
@@ -119,7 +121,7 @@ Se non riesci a gestirla entro 24h, riassegna manualmente a un altro reviewer (`
 | Il workflow gira ma non viene postato alcun commento | Manca `CLAUDE_CODE_OAUTH_TOKEN` o è scaduto | Rigenera con `claude setup-token`, ricarica come repo secret |
 | La PR si apre ma non finisce sul Master Board | Manca `MASTER_BOARD_TOKEN` o non ha scope `Projects: write` | Rigenera il PAT con il permesso giusto |
 | Non ricevo notifica Telegram sui failure | Manca `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` sul repo | Carica entrambi come repo secret |
-| Reviewer non assegnato | Il tuo username non è nel pool nel template | Aggiornalo in `agent-fix.yml` etc. via PR |
+| Reviewer non assegnato | Il tuo username non è nel pool | Imposta la variabile repo/org `AGENT_REVIEWERS` (es. `montafra,K0enjy,Belletz-28`) in Settings → Secrets and variables → Actions → Variables |
 | Workflow `failure` su step Claude | Quasi sempre quota Claude esaurita o token revocato | Controlla console.anthropic.com / rigenera token |
 
 Per problemi non in tabella, log completo:

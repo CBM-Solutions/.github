@@ -247,11 +247,12 @@ Configurazione centralizzata nel reusable `agent-runner.yml` (override via varia
 
 ### Modello (selezione per agente)
 
-Default dell'action: **`claude-sonnet-4-6`**. Override per agente via `--model` in `claude_args`:
+Default dell'action: **`claude-sonnet-4-6`**. Il modello si imposta per agente con l'input `model:` del caller (il reusable lo passa a `--model` solo se valorizzato):
 ```yaml
-claude_args: |
-  --model claude-opus-4-8
-  --allowedTools "..."
+# in workflow-templates/agent-<nome>.yml
+with:
+  model: claude-opus-4-8
+  allowed_tools: "..."
 ```
 
 Configurazione attuale dei template:
@@ -308,9 +309,9 @@ L'agente NON ha:
 
 ### Allowed / disallowed tools
 
-Ogni workflow passa una whitelist precisa di tool consentiti (Edit/Write/Read + alcuni `gh`/`git`/`npm`/...). Se Claude prova un tool fuori lista, viene bloccato. Vedi `claude_args: --allowedTools "..."` in ogni template.
+Ogni caller passa la whitelist precisa di tool consentiti via l'input `allowed_tools:` (Edit/Write/Read + alcuni `gh`/`git`/`npm`/...), che il reusable `agent-runner.yml` inoltra a `--allowedTools`. Se Claude prova un tool fuori lista, viene bloccato.
 
-In più, ogni agente ha un `--disallowedTools` esplicito che blocca i binari di **recon/esfiltrazione** usati negli exploit di prompt-injection reali (`ps`, `cat`, `env`, `printenv`, `curl`, `wget`, `nc`, `base64`, ...). `--disallowedTools` ha precedenza su `--allowedTools`: anche se un allowlist venisse allargato per errore, questi restano bloccati. Impedisce il pattern `cat /proc/self/environ` → esfiltrazione di `CLAUDE_CODE_OAUTH_TOKEN`/token OIDC via commento.
+In più, il reusable applica un `--disallowedTools` **di default centralizzato** (input `disallowed_tools`, overridabile per agente) che blocca i binari di **recon/esfiltrazione** usati negli exploit di prompt-injection reali (`ps`, `cat`, `env`, `printenv`, `curl`, `wget`, `nc`, `base64`, ...). `--disallowedTools` ha precedenza su `--allowedTools`: anche se un allowlist venisse allargato per errore, questi restano bloccati. Impedisce il pattern `cat /proc/self/environ` → esfiltrazione di `CLAUDE_CODE_OAUTH_TOKEN`/token OIDC via commento.
 
 ### Hardening supply-chain
 

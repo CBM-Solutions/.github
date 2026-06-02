@@ -55,10 +55,11 @@ Dati misurati sul repo `agent-sandbox` durante validazione iniziale.
 
 Default action: **Claude Sonnet 4.6**.
 
-Override in `claude_args` del workflow:
+Dalla Fase 7 il modello si imposta con l'input `model:` del caller (il reusable `agent-runner.yml` lo passa a `--model` solo se valorizzato):
 ```yaml
-claude_args: |
-  --model claude-haiku-4-5     # 8-10× più economico, latenza minore
+# in workflow-templates/agent-<nome>.yml
+with:
+  model: claude-haiku-4-5     # 8-10× più economico, latenza minore
 ```
 
 | Modello | Quando preferirlo |
