@@ -30,9 +30,10 @@ jobs:
             in base al contesto della issue:
             1. Identifica i file di documentazione rilevanti.
             2. Applica modifiche chiare, senza alterare la logica del codice.
-            3. Apri una PR "docs:" verso il branch di default con descrizione
+            3. Crea un branch dedicato `agent/docs-${{ github.event.issue.number }}`.
+            4. Apri una PR "docs:" verso il branch di default con descrizione
                che include "Closes #${{ github.event.issue.number }}".
-            4. Commenta la issue con il link alla PR.
+            5. Commenta la issue con il link alla PR.
             Non scrivere documentazione speculativa: solo ciò che la issue richiede.
 
       # === Master Board: aggiungi issue ===
@@ -51,10 +52,17 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH_NAME: agent/docs-${{ github.event.issue.number }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
         run: |
           PR_NUM=$(gh pr list --repo "${{ github.repository }}" \
-            --author "app/claude" --state open --limit 1 \
+            --state open --head "$BRANCH_NAME" --limit 1 \
             --json number --jq '.[0].number // ""')
+          if [ -z "$PR_NUM" ]; then
+            PR_NUM=$(gh pr list --repo "${{ github.repository }}" \
+              --author "app/claude" --state open --search "\"Closes #${ISSUE_NUM}\" in:body" --limit 1 \
+              --json number --jq '.[0].number // ""')
+          fi
           echo "pr_num=$PR_NUM" >> "$GITHUB_OUTPUT"
           if [ -n "$PR_NUM" ]; then echo "Trovata PR #$PR_NUM"; else echo "Nessuna PR da app/claude"; fi
 
@@ -83,12 +91,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUM: ${{ steps.find-pr.outputs.pr_num }}
           ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
+          REVIEWERS_CSV: ${{ vars.AGENT_REVIEWERS || 'montafra,K0enjy,Belletz-28' }}
         run: |
-          REVIEWERS=("montafra" "K0enjy" "Belletz-28")
-          IDX=$((PR_NUM % 3))
-          REVIEWER="${REVIEWERS[$IDX]}"
-          if [ "$REVIEWER" = "$ISSUE_AUTHOR" ]; then
-            REVIEWER="${REVIEWERS[$(((IDX + 1) % 3))]}"
-          fi
+          IFS=',' read -ra REVIEWERS <<< "$REVIEWERS_CSV"
+          IDX=$((PR_NUM % ${#REVIEWERS[@]}))
+          REVIEWER=""
+          for OFFSET in $(seq 0 $((${#REVIEWERS[@]} - 1))); do
+            CANDIDATE=$(echo "${REVIEWERS[$(((IDX + OFFSET) % ${#REVIEWERS[@]}))]}" | xargs)
+            if [ -n "$CANDIDATE" ] && [ "$CANDIDATE" != "$ISSUE_AUTHOR" ]; then
+              REVIEWER="$CANDIDATE"
+              break
+            fi
+          done
+          if [ -z "$REVIEWER" ]; then echo "::warning::Nessun reviewer assegnabile"; exit 0; fi
           echo "Reviewer assegnato: $REVIEWER per PR #$PR_NUM (issue di $ISSUE_AUTHOR)"
           gh pr edit "$PR_NUM" --repo "${{ github.repository }}" --add-reviewer "$REVIEWER"
