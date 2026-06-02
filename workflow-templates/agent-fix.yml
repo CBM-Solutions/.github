@@ -3,113 +3,42 @@ on:
   issues:
     types: [labeled]
 
+concurrency:
+  group: agent-${{ github.workflow }}-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
 jobs:
   run:
     if: github.event.label.name == 'agent:fix'
-    runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
       issues: write
       id-token: write
       actions: read
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-      - uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1.0.133
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: |
-            --disallowedTools "Bash(ps:*),Bash(cat:*),Bash(env:*),Bash(printenv:*),Bash(curl:*),Bash(wget:*),Bash(eval:*),Bash(export:*),Bash(nc:*),Bash(base64:*)"
-            --allowedTools "Edit,Write,Read,MultiEdit,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(git:*)"
-          prompt: |
-            REPO: ${{ github.repository }}
-            ISSUE #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@40880453a64d22c662f8b8f0d4138a15f619d594
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      MASTER_BOARD_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
+    with:
+      is_pr_creator: true
+      branch_prefix: fix
+      allowed_tools: "Edit,Write,Read,MultiEdit,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh issue view:*),Bash(git:*)"
+      prompt: |
+        REPO: ${{ github.repository }}
+        ISSUE #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
 
-            ${{ github.event.issue.body }}
+        ${{ github.event.issue.body }}
 
-            Risolvi questa issue in autonomia:
-            1. Crea un branch dedicato `agent/fix-${{ github.event.issue.number }}`.
-            2. Applica le modifiche minime necessarie a risolvere il problema.
-            3. Apri una Pull Request verso il branch di default con descrizione chiara
-               che include "Closes #${{ github.event.issue.number }}".
-            4. Commenta la issue con il link alla PR.
-            Mantieni lo scope ristretto: niente refactor non richiesti.
+        Risolvi questa issue in autonomia:
+        1. Crea un branch dedicato `agent/fix-${{ github.event.issue.number }}`.
+        2. Applica le modifiche minime necessarie a risolvere il problema.
+        3. Apri una Pull Request verso il branch di default con descrizione chiara
+           che include "Closes #${{ github.event.issue.number }}".
+        4. Commenta la issue con il link alla PR.
+        Mantieni lo scope ristretto: niente refactor non richiesti.
 
-            Per azioni difficili da invertire o distruttive (force-push,
-            reset --hard, rm -rf, modifiche a infra condivisa) non procedere:
-            segnala nella PR e lascia decidere all'umano. Non aggirare i check
-            con --no-verify.
-
-      # === Master Board: aggiungi issue ===
-      - name: Aggiungi issue a Master Board
-        id: add-to-project
-        if: success()
-        continue-on-error: true
-        uses: actions/add-to-project@244f685bbc3b7adfa8466e08b698b5577571133e # v1.0.2
-        with:
-          project-url: https://github.com/orgs/CBM-Solutions/projects/4
-          github-token: ${{ secrets.MASTER_BOARD_TOKEN }}
-
-      # === Trova PR appena aperta dall'agente ===
-      - name: Trova PR aperta dall'agente
-        id: find-pr
-        if: success()
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH_NAME: agent/fix-${{ github.event.issue.number }}
-          ISSUE_NUM: ${{ github.event.issue.number }}
-        run: |
-          PR_NUM=$(gh pr list --repo "${{ github.repository }}" \
-            --state open --head "$BRANCH_NAME" --limit 1 \
-            --json number --jq '.[0].number // ""')
-          if [ -z "$PR_NUM" ]; then
-            PR_NUM=$(gh pr list --repo "${{ github.repository }}" \
-              --author "app/claude" --state open --search "\"Closes #${ISSUE_NUM}\" in:body" --limit 1 \
-              --json number --jq '.[0].number // ""')
-          fi
-          echo "pr_num=$PR_NUM" >> "$GITHUB_OUTPUT"
-          if [ -n "$PR_NUM" ]; then echo "Trovata PR #$PR_NUM"; else echo "Nessuna PR da app/claude"; fi
-
-      # === Master Board: Status = Test (PR pronta per review umana) ===
-      - name: Setta Status = Test sul Master Board
-        if: success() && steps.find-pr.outputs.pr_num != '' && steps.add-to-project.outputs.itemId
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
-        run: |
-          gh api graphql -f query='
-            mutation($project: ID!, $item: ID!, $field: ID!, $value: String!) {
-              updateProjectV2ItemFieldValue(input: {
-                projectId: $project, itemId: $item,
-                fieldId: $field, value: { singleSelectOptionId: $value }
-              }) { projectV2Item { id } }
-            }' \
-            -f project=PVT_kwDOEAw5d84BVmVA \
-            -f item="${{ steps.add-to-project.outputs.itemId }}" \
-            -f field=PVTSSF_lADOEAw5d84BVmVAzhRBE38 \
-            -f value=b11e1636
-
-      # === Auto-assign reviewer (round-robin tra 3 admin) ===
-      - name: Auto-assign reviewer
-        if: success() && steps.find-pr.outputs.pr_num != ''
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUM: ${{ steps.find-pr.outputs.pr_num }}
-          ISSUE_AUTHOR: ${{ github.event.issue.user.login }}
-          REVIEWERS_CSV: ${{ vars.AGENT_REVIEWERS || 'montafra,K0enjy,Belletz-28' }}
-        run: |
-          IFS=',' read -ra REVIEWERS <<< "$REVIEWERS_CSV"
-          IDX=$((PR_NUM % ${#REVIEWERS[@]}))
-          REVIEWER=""
-          for OFFSET in $(seq 0 $((${#REVIEWERS[@]} - 1))); do
-            CANDIDATE=$(echo "${REVIEWERS[$(((IDX + OFFSET) % ${#REVIEWERS[@]}))]}" | xargs)
-            if [ -n "$CANDIDATE" ] && [ "$CANDIDATE" != "$ISSUE_AUTHOR" ]; then
-              REVIEWER="$CANDIDATE"
-              break
-            fi
-          done
-          if [ -z "$REVIEWER" ]; then echo "::warning::Nessun reviewer assegnabile"; exit 0; fi
-          echo "Reviewer assegnato: $REVIEWER per PR #$PR_NUM (issue di $ISSUE_AUTHOR)"
-          gh pr edit "$PR_NUM" --repo "${{ github.repository }}" --add-reviewer "$REVIEWER"
+        Per azioni difficili da invertire o distruttive (force-push,
+        reset --hard, rm -rf, modifiche a infra condivisa) non procedere:
+        segnala nella PR e lascia decidere all'umano. Non aggirare i check
+        con --no-verify.

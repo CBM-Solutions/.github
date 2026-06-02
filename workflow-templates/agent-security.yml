@@ -5,69 +5,61 @@ on:
   issues:
     types: [labeled]
 
+concurrency:
+  group: agent-${{ github.workflow }}-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
 jobs:
   run:
     if: github.event.label.name == 'agent:security'
-    runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
       issues: write
       id-token: write
       actions: read
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          fetch-depth: 0
-      - uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1.0.133
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          claude_args: |
-            --model claude-opus-4-8
-            --disallowedTools "Bash(ps:*),Bash(cat:*),Bash(env:*),Bash(printenv:*),Bash(curl:*),Bash(wget:*),Bash(eval:*),Bash(export:*),Bash(nc:*),Bash(base64:*)"
-            --allowedTools "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh issue view:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
-          prompt: |
-            REPO: ${{ github.repository }}
-            EVENTO: ${{ github.event_name }}
-            PR #${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}
-            ISSUE #${{ github.event.issue.number }} ${{ github.event.issue.title }}
+    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@40880453a64d22c662f8b8f0d4138a15f619d594
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      MASTER_BOARD_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
+    with:
+      model: claude-opus-4-8
+      fetch_depth: 0
+      enable_retry: true
+      allowed_tools: "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh issue view:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"
+      prompt: |
+        REPO: ${{ github.repository }}
+        EVENTO: ${{ github.event_name }}
+        PR #${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}
+        ISSUE #${{ github.event.issue.number }} ${{ github.event.issue.title }}
 
-            Sei un analista di sicurezza applicativa. Esegui una security review
-            diff-aware dell'oggetto etichettato.
+        Sei un analista di sicurezza applicativa. Esegui una security review
+        diff-aware dell'oggetto etichettato.
 
-            <metodo>
-            1. Se è una PR, leggi il diff completo (gh pr diff). Se è una issue,
-               leggi il contesto e i file citati.
-            2. Non fare affermazioni su codice che non hai aperto: leggi i file
-               rilevanti prima di concludere.
-            3. Cerca: injection (SQL/command/template), XSS, falle di
-               autenticazione/autorizzazione, secret hardcoded, input non
-               validato, deserializzazione insicura, path traversal, SSRF,
-               dipendenze vulnerabili, gestione errori che espone dati.
-            </metodo>
+        <metodo>
+        1. Se è una PR, leggi il diff completo (gh pr diff). Se è una issue,
+           leggi il contesto e i file citati.
+        2. Non fare affermazioni su codice che non hai aperto: leggi i file
+           rilevanti prima di concludere.
+        3. Cerca: injection (SQL/command/template), XSS, falle di
+           autenticazione/autorizzazione, secret hardcoded, input non
+           validato, deserializzazione insicura, path traversal, SSRF,
+           dipendenze vulnerabili, gestione errori che espone dati.
+        </metodo>
 
-            <reporting>
-            Segnala OGNI problema che trovi, anche incerto o a bassa severità.
-            Non filtrare per importanza in questa fase. Per ciascun finding indica:
-            - severità stimata (Critico / Alto / Medio / Basso)
-            - livello di confidence
-            - file e riga
-            - remediation concreta
-            Meglio segnalare un finding che verrà poi scartato che ometterne uno reale.
-            </reporting>
+        <reporting>
+        Segnala OGNI problema che trovi, anche incerto o a bassa severità.
+        Non filtrare per importanza in questa fase. Per ciascun finding indica:
+        - severità stimata (Critico / Alto / Medio / Basso)
+        - livello di confidence
+        - file e riga
+        - remediation concreta
+        Meglio segnalare un finding che verrà poi scartato che ometterne uno reale.
+        </reporting>
 
-            Pubblica OBBLIGATORIAMENTE il risultato come commento, usando il tool:
-            - se EVENTO è "issues": `gh issue comment ${{ github.event.issue.number }} --body "..."`
-            - se EVENTO è "pull_request": `gh pr comment ${{ github.event.pull_request.number }} --body "..."`
-            Il commento deve essere strutturato con sezioni "Critico", "Alto",
-            "Medio", "Basso". Se non trovi nulla, dichiaralo esplicitamente.
-            Non aprire PR, non modificare codice.
-
-      # === Master Board: aggiungi PR/issue ===
-      - name: Aggiungi a Master Board
-        if: success()
-        continue-on-error: true
-        uses: actions/add-to-project@244f685bbc3b7adfa8466e08b698b5577571133e # v1.0.2
-        with:
-          project-url: https://github.com/orgs/CBM-Solutions/projects/4
-          github-token: ${{ secrets.MASTER_BOARD_TOKEN }}
+        Pubblica OBBLIGATORIAMENTE il risultato come commento, usando il tool:
+        - se EVENTO è "issues": `gh issue comment ${{ github.event.issue.number }} --body "..."`
+        - se EVENTO è "pull_request": `gh pr comment ${{ github.event.pull_request.number }} --body "..."`
+        Il commento deve essere strutturato con sezioni "Critico", "Alto",
+        "Medio", "Basso". Se non trovi nulla, dichiaralo esplicitamente.
+        Non aprire PR, non modificare codice.
