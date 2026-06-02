@@ -67,6 +67,10 @@ In **Settings → Secrets and variables → Actions → Variables** puoi imposta
 
 Copia `CLAUDE.md` nella **root del repo** (sorgente in `workflow-templates/CLAUDE.md` del repo `.github`). Viene letto da ogni agente a inizio sessione e fornisce convenzioni + regole di sicurezza. Personalizza la sezione "Convenzioni di progetto" con i comandi di test/build del repo.
 
+### Agent Skills — nessuna azione richiesta
+
+I prompt degli agenti vivono come **Agent Skills centrali** in `CBM-Solutions/.github/.claude/skills/`. Il reusable `agent-runner.yml` le carica a runtime (`use_skills: true`) e le esclude dal commit: **non** devi copiarle nel tuo repo. Per modificarle vedi `docs/AGENTI.md → Modificare il prompt di un agente`.
+
 ---
 
 ## Step 3 — Eseguire il bootstrap label

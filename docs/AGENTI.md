@@ -36,7 +36,9 @@ Issue/PR + label "agent:X"  →  GitHub Actions (runner effimero)
 
 Nessun server. Nessun webhook gateway. Tutto su infrastruttura GitHub + abbonamento Claude Max esistente.
 
-**DRY (Fase 7):** ogni `agent-*.yml` è un *thin caller* (~30-55 righe: trigger, `concurrency`, label-gate, `permissions`, input) che richiama un **reusable workflow centralizzato** `CBM-Solutions/.github/.github/workflows/agent-runner.yml@<sha>`. Lì vivono — in un solo punto — la logica comune (checkout, claude-code-action, retry, pipeline Master Board, reviewer) e i pin SHA. Aggiornare la flotta = 1 commit nel reusable + bump del SHA nei caller. Ogni agente legge anche `CLAUDE.md` dalla root del repo per grounding (convenzioni + regole di sicurezza).
+**DRY (Fase 7):** ogni `agent-*.yml` è un *thin caller* (~25-40 righe: trigger, `concurrency`, label-gate, `permissions`, input + un prompt ridotto al solo contesto) che richiama un **reusable workflow centralizzato** `CBM-Solutions/.github/.github/workflows/agent-runner.yml@<sha>`. Lì vivono — in un solo punto — la logica comune (checkout, claude-code-action, retry, pipeline Master Board, reviewer) e i pin SHA. Aggiornare la flotta = 1 commit nel reusable + bump del SHA nei caller. Ogni agente legge anche `CLAUDE.md` dalla root del repo per grounding (convenzioni + regole di sicurezza).
+
+**Prompt come Agent Skills (Fase 7D):** la **metodologia** di ogni agente vive in `.github/.claude/skills/agent-<nome>/SKILL.md` (repo `.github`), non più nello YAML. Il reusable, se `use_skills: true`, fa checkout di `.github@skills_ref` e copia le skill nel workspace; il caller le invoca con `/agent-<nome>` in testa al prompt (il prompt YAML resta solo il contesto dinamico: issue/PR/body). Vantaggi: prompt versionati in markdown, **un solo punto** (non duplicati per-repo), riusabili anche localmente dai dev (`~/.claude/skills`).
 
 ---
 
@@ -313,6 +315,16 @@ Ogni caller passa la whitelist precisa di tool consentiti via l'input `allowed_t
 
 In più, il reusable applica un `--disallowedTools` **di default centralizzato** (input `disallowed_tools`, overridabile per agente) che blocca i binari di **recon/esfiltrazione** usati negli exploit di prompt-injection reali (`ps`, `cat`, `env`, `printenv`, `curl`, `wget`, `nc`, `base64`, ...). `--disallowedTools` ha precedenza su `--allowedTools`: anche se un allowlist venisse allargato per errore, questi restano bloccati. Impedisce il pattern `cat /proc/self/environ` → esfiltrazione di `CLAUDE_CODE_OAUTH_TOKEN`/token OIDC via commento.
 
+### Modificare il prompt di un agente (Agent Skills)
+
+La metodologia di ogni agente è in `.github/.claude/skills/agent-<nome>/SKILL.md`. Per cambiarla:
+1. Modifica il `SKILL.md` (il `body`; lascia il frontmatter `name`/`description`/`disable-model-invocation`).
+2. Commit su `.github` → prendi il nuovo SHA.
+3. Aggiorna `skills_ref` (default) in `.github/.github/workflows/agent-runner.yml` con quel SHA, committa → nuovo SHA del reusable.
+4. Aggiorna il pin `agent-runner.yml@<sha>` nei caller `workflow-templates/agent-*.yml` (e nei repo che li hanno adottati).
+
+Stessa disciplina di immutabilità del pin SHA (6A). Per editing rapido in dev: copia/symlinka `.github/.claude/skills` in `~/.claude/skills` e invoca `/agent-<nome>` localmente. Le skill **non** vanno copiate nei repo target: le carica il reusable a runtime (escluse dal commit via `.git/info/exclude`).
+
 ### Hardening supply-chain
 
 - **Action pinnate al commit SHA** (non a tag mutabili come `@v1`): dopo il compromesso tj-actions/changed-files (mar-2025) i tag possono essere ripuntati a codice malevolo. Tutte le `uses:` riportano `@<sha> # <tag>` per leggibilità. `anthropics/claude-code-action` è pinnata a una versione **≥ v1.0.94** (patchata contro l'esfiltrazione via injection, CVSS 9.4). Dalla Fase 7 i pin SHA delle action vivono **in un solo punto** (il reusable `agent-runner.yml`); i caller pinnano a loro volta il reusable a SHA → catena di fiducia immutabile end-to-end.
@@ -344,8 +356,10 @@ Se vedi comportamento anomalo da un agente:
 │   ├── AGENTI.md                        ← questo file
 │   ├── SETUP-NUOVO-REPO.md              ← attivare gli agenti su un repo
 │   └── COSTI.md                         ← report consumi
+├── .claude/skills/                      ← prompt come Agent Skills (Fase 7D)
+│   └── agent-<nome>/SKILL.md            ← metodologia di ogni agente (10)
 ├── .github/workflows/
-│   ├── agent-runner.yml                 ← REUSABLE centralizzato (logica comune + pin SHA)
+│   ├── agent-runner.yml                 ← REUSABLE centralizzato (logica comune + pin SHA + load skills)
 │   ├── zizmor-scan.yml                  ← scanner sicurezza workflow
 │   ├── template-validation.yml          ← actionlint + YAML lint
 │   └── fleet-dashboard.yml              ← OBSERVABILITY.md + Telegram (cron)
