@@ -54,16 +54,20 @@ on:
         type: boolean
         required: false
         default: false
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN:
+        description: Token OAuth dell'abbonamento Claude Max.
+        required: true
+      MASTER_BOARD_TOKEN:
+        description: PAT con scope project per scrivere sul Master Board.
+        required: false
 
+# I permessi del GITHUB_TOKEN sono definiti dal caller (read-only vs PR-creator):
+# il reusable li eredita e non può elevarli. Per questo NON dichiariamo qui un
+# blocco permissions fisso (causerebbe startup_failure sui caller read-only).
 jobs:
   run:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-      id-token: write
-      actions: read
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
