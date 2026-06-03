@@ -1,31 +1,31 @@
 # 📊 Fleet Dashboard — agenti Claude (ultimi 30 giorni)
 
-_Aggiornato: 2026-06-02 10:17 UTC · org `CBM-Solutions`_
+_Aggiornato: 2026-06-03 11:56 UTC · org `CBM-Solutions`_
 
 ## Riepilogo
 
 | Metrica | Valore |
 |---|---|
-| Run totali (escl. skipped) | 4 |
-| ✅ Success | 2 |
-| 🔴 Failure | 2 |
-| Success rate | 50% |
-| ⏭️ Skipped (label non-match) | 36 |
-| 💸 Stima costo-equivalente | $0.50 _(proxy, non fatturato su Max)_ |
+| Run totali (escl. skipped) | 5 |
+| ✅ Success | 4 |
+| 🔴 Failure | 1 |
+| Success rate | 80% |
+| ⏭️ Skipped (label non-match) | 42 |
+| 💸 Stima costo-equivalente | $0.54 _(proxy, non fatturato su Max)_ |
 
 ## Per agente
 
 | Agente | Run | Success | Failure | Durata media (s) | Stima costo |
 |---|---|---|---|---|---|
-| Agent Fix | 1 | 1 | 0 | 64 | $0.10 |
-| Agent IaC | 2 | 1 | 1 | 139 | $0.20 |
-| Agent Test | 1 | 0 | 1 | 23 | $0.20 |
+| Agent Fix | 1 | 1 | 0 | 58 | $0.10 |
+| Agent Security | 2 | 1 | 1 | 176 | $0.40 |
+| Agent Summary | 2 | 2 | 0 | 37 | $0.04 |
 
 ## Per repository
 
 | Repo | Run | Success | Failure |
 |---|---|---|---|
-| agent-sandbox | 4 | 2 | 2 |
+| agent-sandbox | 5 | 4 | 1 |
 
 ---
 _Nota: il costo per-run (`total_cost_usd`) non è incluso in v1 perché
