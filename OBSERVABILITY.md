@@ -1,18 +1,18 @@
 # 📊 Fleet Dashboard — trend agenti Claude
 
-_Generato: 2026-06-04 21:35 UTC (~18:00 Europe/Rome) · org `CBM-Solutions` · finestra 180 giorni_
+_Generato: 2026-06-04 23:54 CEST (UTC 21:54) · org `CBM-Solutions` · finestra 180 giorni_
 
 ## Riepilogo finestra (180 giorni)
 
 | Metrica | Valore |
 |---|---|
-| Run totali (escl. skipped) | 26 |
-| ✅ Success | 14 |
-| 🔴 Failure | 11 |
-| Success rate | 53% |
-| ⏭️ Skipped (label non-match) | 216 |
-| 💸 Stima costo-equivalente (proxy) | $3.05 _(non fatturato su Max)_ |
-| 💵 Costo REALE (campione 2 run) | $0.1296 tot · $0.0648/run |
+| Run totali (escl. skipped) | 25 |
+| ✅ Success | 17 |
+| 🔴 Failure | 7 |
+| Success rate | 68% |
+| ⏭️ Skipped (label non-match) | 213 |
+| 💸 Stima costo-equivalente (proxy) | $2.74 _(non fatturato su Max)_ |
+| 💵 Costo REALE (campione 2 run) | $0.2383 tot · $0.1192/run |
 
 ## ✅ Qualità: esito PR agenti (override-rate)
 
@@ -21,7 +21,7 @@ Quanto l'umano accetta il lavoro degli agenti PR-creator (autore `app/claude`):
 | Metrica | Valore |
 |---|---|
 | 🟢 PR merge (accettate) | 0 |
-| 🔴 PR chiuse senza merge (override umano) | 2 |
+| 🔴 PR chiuse senza merge (override umano) | 5 |
 | 🟡 PR ancora aperte | 6 |
 | 📉 Override-rate | 100% _(rifiutate / decise)_ |
 
@@ -29,32 +29,33 @@ Quanto l'umano accetta il lavoro degli agenti PR-creator (autore `app/claude`):
 
 | Giorno | Run | ✅ | 🔴 | Rate | Durata media (s) |
 |---|---|---|---|---|---|
-| 2026-05-30 | 16 | 6 | 10 | 37% | 60 |
+| 2026-05-30 | 12 | 6 | 6 | 50% | 77 |
 | 2026-06-02 | 10 | 8 | 1 | 80% | 71 |
+| 2026-06-04 | 3 | 3 | 0 | 100% | 77 |
 
 ## 🗓️ Trend per settimana (ultime 12, ISO)
 
 | Settimana | Run | ✅ | 🔴 | Rate | Durata media (s) |
 |---|---|---|---|---|---|
-| 2026-W22 | 16 | 6 | 10 | 37% | 60 |
-| 2026-W23 | 10 | 8 | 1 | 80% | 71 |
+| 2026-W22 | 12 | 6 | 6 | 50% | 77 |
+| 2026-W23 | 13 | 11 | 1 | 84% | 72 |
 
 ## 📆 Trend per mese (ultimi 6)
 
 | Mese | Run | ✅ | 🔴 | Rate | Durata media (s) |
 |---|---|---|---|---|---|
-| 2026-05 | 16 | 6 | 10 | 37% | 60 |
-| 2026-06 | 10 | 8 | 1 | 80% | 71 |
+| 2026-05 | 12 | 6 | 6 | 50% | 77 |
+| 2026-06 | 13 | 11 | 1 | 84% | 72 |
 
 ## Per agente (finestra)
 
 | Agente | Run | Success | Failure | Durata media (s) | Stima costo |
 |---|---|---|---|---|---|
-| Agent CICD | 3 | 1 | 2 | 29 | $0.42 |
-| Agent Fix | 3 | 3 | 0 | 64 | $0.30 |
-| Agent IaC | 5 | 2 | 3 | 71 | $0.50 |
-| Agent Maintain | 3 | 1 | 2 | 60 | $0.51 |
-| Agent Security | 5 | 2 | 3 | 122 | $1.00 |
+| Agent CICD | 2 | 1 | 1 | 41 | $0.28 |
+| Agent Fix | 6 | 6 | 0 | 70 | $0.60 |
+| Agent IaC | 4 | 2 | 2 | 87 | $0.40 |
+| Agent Maintain | 2 | 1 | 1 | 87 | $0.34 |
+| Agent Security | 4 | 2 | 2 | 145 | $0.80 |
 | Agent Summary | 6 | 5 | 0 | 39 | $0.12 |
 | Agent Test | 1 | 0 | 1 | 23 | $0.20 |
 
@@ -62,7 +63,7 @@ Quanto l'umano accetta il lavoro degli agenti PR-creator (autore `app/claude`):
 
 | Repo | Run | Success | Failure |
 |---|---|---|---|
-| agent-sandbox | 26 | 14 | 11 |
+| agent-sandbox | 25 | 17 | 7 |
 
 ---
 _I trend usano `createdAt` delle run; la settimana è ISO-8601 (lun-dom)._
