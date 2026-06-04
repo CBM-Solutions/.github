@@ -1,6 +1,6 @@
 # 📊 Fleet Dashboard — trend agenti Claude
 
-_Generato: 2026-06-04 20:50 UTC (~18:00 Europe/Rome) · org `CBM-Solutions` · finestra 180 giorni_
+_Generato: 2026-06-04 21:35 UTC (~18:00 Europe/Rome) · org `CBM-Solutions` · finestra 180 giorni_
 
 ## Riepilogo finestra (180 giorni)
 
@@ -11,7 +11,19 @@ _Generato: 2026-06-04 20:50 UTC (~18:00 Europe/Rome) · org `CBM-Solutions` · f
 | 🔴 Failure | 11 |
 | Success rate | 53% |
 | ⏭️ Skipped (label non-match) | 216 |
-| 💸 Stima costo-equivalente | $3.05 _(proxy, non fatturato su Max)_ |
+| 💸 Stima costo-equivalente (proxy) | $3.05 _(non fatturato su Max)_ |
+| 💵 Costo REALE (campione 2 run) | $0.1296 tot · $0.0648/run |
+
+## ✅ Qualità: esito PR agenti (override-rate)
+
+Quanto l'umano accetta il lavoro degli agenti PR-creator (autore `app/claude`):
+
+| Metrica | Valore |
+|---|---|
+| 🟢 PR merge (accettate) | 0 |
+| 🔴 PR chiuse senza merge (override umano) | 2 |
+| 🟡 PR ancora aperte | 6 |
+| 📉 Override-rate | 100% _(rifiutate / decise)_ |
 
 ## 📅 Trend per giorno (ultimi 14)
 
@@ -54,4 +66,4 @@ _Generato: 2026-06-04 20:50 UTC (~18:00 Europe/Rome) · org `CBM-Solutions` · f
 
 ---
 _I trend usano `createdAt` delle run; la settimana è ISO-8601 (lun-dom)._
-_Costo per-run (`total_cost_usd`) non incluso: richiederebbe il download dei log di ogni run._
+_Costo REALE: campione delle ultime 20 run riuscite (`total_cost_usd` dai log, soggetto a retention) per calibrare la stima proxy. Override-rate calcolato sulle PR `app/claude` decise (merge o chiuse) nella finestra._
