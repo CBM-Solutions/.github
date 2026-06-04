@@ -168,7 +168,7 @@ jobs:
           {
             echo "# 📊 Fleet Dashboard — trend agenti Claude"
             echo ""
-            echo "_Generato: $(date -u +'%Y-%m-%d %H:%M UTC') (~18:00 Europe/Rome) · org \`${ORG}\` · finestra ${WINDOW_DAYS} giorni_"
+            echo "_Generato: $(TZ='Europe/Rome' date +'%Y-%m-%d %H:%M %Z') (UTC $(date -u +'%H:%M')) · org \`${ORG}\` · finestra ${WINDOW_DAYS} giorni_"
             echo ""
             echo "## Riepilogo finestra (${WINDOW_DAYS} giorni)"
             echo ""
@@ -275,11 +275,11 @@ jobs:
           if [ -z "${BOT_TOKEN:-}" ] || [ -z "${CHAT_ID:-}" ]; then
             echo "::warning::TELEGRAM secrets non configurati, salto invio"; exit 0
           fi
-          NOW=$(date -u +'%Y-%m-%d %H:%M UTC')
+          NOW=$(TZ='Europe/Rome' date +'%Y-%m-%d %H:%M %Z')
           # Newline REALI (no %0A) + parse_mode HTML (robusto con _ nei nomi).
           MSG=$(cat <<EOF
           📊 <b>Fleet Dashboard</b> · trend agenti
-          <i>aggiornato ${NOW} (~18:00 Europe/Rome)</i>
+          <i>aggiornato ${NOW}</i>
 
           📅 Oggi: <b>${D_TODAY}</b>
           🗓️ Settimana: <b>${W_THIS}</b>
