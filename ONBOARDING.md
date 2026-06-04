@@ -65,6 +65,30 @@ Se uno dei passi sopra non funziona, vai alla sezione [Troubleshooting](#-troubl
 
 ---
 
+## 🛠 Spedire una funzionalità con un agente — flusso end-to-end
+
+Tutto **da remoto** (app GitHub mobile o browser, niente CLI). Esempio: aggiungere una nuova funzionalità.
+
+1. **Apri una issue dettagliata.** Sul repo target → **Issues → New issue → "Task per agente Claude"**. Compila:
+   - **Contesto e obiettivo**: cosa va aggiunto, in quale area/file, vincoli noti.
+   - **Criteri di accettazione**: come si riconosce che è completo (comportamento osservabile, file toccati, eventuali test).
+   - Più sei specifico, migliore è il diff. **Una issue = un obiettivo.**
+2. **Applica la label dell'agente.** Per implementare → `agent:fix` (l'agente generico issue→PR; nonostante il nome, è il risolutore che crea la PR a partire dalla issue). La label è il **trigger** e richiede write access (è anche il gate di sicurezza).
+   > Il form **non** applica la label da solo: la metti tu dopo aver creato la issue.
+3. **L'agente parte da solo** (workflow). Indaga il codice, implementa il minimo necessario, apre una **PR** con `Closes #N` e corpo *cosa / perché / come testare*.
+4. **Automatico**: la PR viene **aggiunta al Master Board**, messa in **Status = Test**, e ti assegna un **reviewer** round-robin (mai l'autore della issue).
+5. **Notifiche**: push GitHub mobile sulla review request; Telegram **solo se il run fallisce**.
+6. **Revisione umana** (consigliata per le feature): apri la PR; opzionalmente applica `agent:review` (e/o `agent:security`) **alla PR** per un'analisi strutturata prima di decidere.
+7. **Merge**: approvi e mergi (branch protection: ≥1 approval, niente auto-merge). Sposti l'item su **Done** sulla board.
+
+**Note pratiche**
+- Per una **feature grande**, spezzala in più issue/PR: gli agenti rendono meglio sul diff piccolo (è anche una regola del `CLAUDE.md`).
+- L'agente **propone**, l'umano è il **merge-gate**. Verifica sempre la PR.
+- Se i test del repo falliscono, l'agente è istruito a **non** presentare la PR come pronta ma a segnalarlo nel corpo.
+- Oggi non c'è un `agent:feature` dedicato: `agent:fix` è il generalista issue→PR e copre bene le nuove funzionalità con una issue ben scritta.
+
+---
+
 ## 📋 Reference rapida agenti
 
 | Quando vuoi… | Usa | Trigger |
