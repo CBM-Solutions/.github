@@ -1,6 +1,6 @@
 # 📊 Fleet Dashboard — agenti Claude (ultimi 30 giorni)
 
-_Aggiornato: 2026-06-04 10:38 UTC · org `CBM-Solutions`_
+_Aggiornato: 2026-06-04 20:49 UTC · org `CBM-Solutions`_
 
 ## Riepilogo
 
