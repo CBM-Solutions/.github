@@ -34,6 +34,7 @@ jobs:
       DAYS_SHOWN: "14"       # righe nella tabella trend per giorno
       WEEKS_SHOWN: "12"      # righe nella tabella trend per settimana (ISO)
       MONTHS_SHOWN: "6"      # righe nella tabella trend per mese
+      COST_SAMPLE: "20"      # 8C: n. run recenti campionate per il costo REALE (total_cost_usd dai log)
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
@@ -58,6 +59,55 @@ jobs:
                       (.createdAt[0:10]) ] | @tsv' \
               >> "$TMP/rows.tsv" 2>/dev/null || echo "skip $repo (nessun workflow/permesso)"
           done
+
+          # === 8C — Esito PR agente (override-rate) ===
+          # Misura quante PR aperte dagli agenti (autore app/claude) l'umano ha
+          # ACCETTATO (merge) vs RIFIUTATO (chiusa senza merge). L'override-rate
+          # = rifiutate / (merge + rifiutate) e' il vero segnale di qualita'
+          # (equivalente al "break-glass rate" usato dai team del settore).
+          # state \t mergedAt
+          : > "$TMP/prs.tsv"
+          for repo in $repos; do
+            gh pr list --repo "$ORG/$repo" --author "app/claude" --state all --limit 200 \
+              --json state,mergedAt,createdAt \
+              --jq '.[] | select(.createdAt > "'"$SINCE"'") | [.state, (.mergedAt // "")] | @tsv' \
+              >> "$TMP/prs.tsv" 2>/dev/null || true
+          done
+          PR_MERGED=$(awk -F'\t' '$1=="MERGED"' "$TMP/prs.tsv" | wc -l | tr -d ' ')
+          PR_REJECTED=$(awk -F'\t' '$1=="CLOSED" && $2==""' "$TMP/prs.tsv" | wc -l | tr -d ' ')
+          PR_OPEN=$(awk -F'\t' '$1=="OPEN"' "$TMP/prs.tsv" | wc -l | tr -d ' ')
+          PR_DECIDED=$((PR_MERGED + PR_REJECTED))
+          OVERRIDE="n/a"
+          if [ "$PR_DECIDED" -gt 0 ]; then OVERRIDE="$(( PR_REJECTED * 100 / PR_DECIDED ))%"; fi
+
+          # === 8C — Costo REALE campionato (total_cost_usd dai log) ===
+          # Best-effort, MAI fatale: scarica i log delle ultime COST_SAMPLE run
+          # agente riuscite ed estrae total_cost_usd. Calibra la stima proxy.
+          # Soggetto a retention dei log: se assenti, riporta n/d.
+          # createdAt \t repo \t runId
+          : > "$TMP/runids.tsv"
+          for repo in $repos; do
+            gh run list --repo "$ORG/$repo" --limit 60 --created ">$SINCE" \
+              --json databaseId,workflowName,createdAt,conclusion \
+              --jq '.[] | select(.workflowName|test("^Agent ")) | select(.conclusion=="success") |
+                    [.createdAt, "'"$repo"'", (.databaseId|tostring)] | @tsv' \
+              >> "$TMP/runids.tsv" 2>/dev/null || true
+          done
+          REAL_TOTAL="0"; REAL_N=0
+          while IFS=$'\t' read -r _ rp id; do
+            [ -n "${id:-}" ] || continue
+            c=$(gh run view "$id" --repo "$ORG/$rp" --log 2>/dev/null \
+                  | grep -oE '"total_cost_usd":[ ]*[0-9.]+' | grep -oE '[0-9.]+' | head -1 || true)
+            if [ -n "$c" ]; then
+              REAL_TOTAL=$(awk -v a="$REAL_TOTAL" -v b="$c" 'BEGIN{printf "%.6f", a+b}')
+              REAL_N=$((REAL_N + 1))
+            fi
+          done < <(sort -r "$TMP/runids.tsv" | head -n "$COST_SAMPLE")
+          REAL_AVG="n/d"; REAL_SUM="n/d"
+          if [ "$REAL_N" -gt 0 ]; then
+            REAL_AVG=$(awk -v t="$REAL_TOTAL" -v n="$REAL_N" 'BEGIN{printf "%.4f", t/n}')
+            REAL_SUM=$(awk -v t="$REAL_TOTAL" 'BEGIN{printf "%.4f", t}')
+          fi
 
           # Mappa giorno -> settimana ISO (YYYY-Www) e mese (YYYY-MM) via GNU date.
           # day \t week \t month
@@ -129,7 +179,19 @@ jobs:
             echo "| 🔴 Failure | ${fail} |"
             echo "| Success rate | ${rate} |"
             echo "| ⏭️ Skipped (label non-match) | ${skip} |"
-            echo "| 💸 Stima costo-equivalente | \$${EST} _(proxy, non fatturato su Max)_ |"
+            echo "| 💸 Stima costo-equivalente (proxy) | \$${EST} _(non fatturato su Max)_ |"
+            echo "| 💵 Costo REALE (campione ${REAL_N} run) | \$${REAL_SUM} tot · \$${REAL_AVG}/run |"
+            echo ""
+            echo "## ✅ Qualità: esito PR agenti (override-rate)"
+            echo ""
+            echo "Quanto l'umano accetta il lavoro degli agenti PR-creator (autore \`app/claude\`):"
+            echo ""
+            echo "| Metrica | Valore |"
+            echo "|---|---|"
+            echo "| 🟢 PR merge (accettate) | ${PR_MERGED} |"
+            echo "| 🔴 PR chiuse senza merge (override umano) | ${PR_REJECTED} |"
+            echo "| 🟡 PR ancora aperte | ${PR_OPEN} |"
+            echo "| 📉 Override-rate | ${OVERRIDE} _(rifiutate / decise)_ |"
             echo ""
             echo "## 📅 Trend per giorno (ultimi ${DAYS_SHOWN})"
             echo ""
@@ -173,7 +235,7 @@ jobs:
             echo ""
             echo "---"
             echo "_I trend usano \`createdAt\` delle run; la settimana è ISO-8601 (lun-dom)._"
-            echo "_Costo per-run (\`total_cost_usd\`) non incluso: richiederebbe il download dei log di ogni run._"
+            echo "_Costo REALE: campione delle ultime ${COST_SAMPLE} run riuscite (\`total_cost_usd\` dai log, soggetto a retention) per calibrare la stima proxy. Override-rate calcolato sulle PR \`app/claude\` decise (merge o chiuse) nella finestra._"
           } > "$OUT"
 
           # Snapshot ultimo periodo per Telegram (singola riga ciascuno)
@@ -186,6 +248,8 @@ jobs:
             echo "TOTAL=$eff"; echo "SUCC=$succ"; echo "FAIL=$fail"; echo "RATE=$rate"
             echo "EST=$EST"; echo "SKIP=$skip"
             echo "D_TODAY=$D_TODAY"; echo "W_THIS=$W_THIS"; echo "M_THIS=$M_THIS"
+            echo "OVERRIDE=$OVERRIDE"; echo "PR_MERGED=$PR_MERGED"; echo "PR_REJECTED=$PR_REJECTED"
+            echo "REAL_AVG=$REAL_AVG"; echo "REAL_N=$REAL_N"
           } >> "$GITHUB_ENV"
 
       - name: Commit dashboard se cambiato
@@ -222,7 +286,8 @@ jobs:
           📆 Mese: <b>${M_THIS}</b>
 
           Finestra ${WINDOW_DAYS}gg → ▫️ ${TOTAL} run · ✅ ${SUCC} · 🔴 ${FAIL} · 📈 ${RATE}
-          💸 Stima costo: ~\$${EST} <i>(proxy, non fatturato su Max)</i>
+          ✅ Override-rate PR: <b>${OVERRIDE}</b> (${PR_MERGED} merge · ${PR_REJECTED} chiuse)
+          💸 Stima proxy ~\$${EST} · 💵 reale ~\$${REAL_AVG}/run (camp. ${REAL_N})
 
           Trend per giorno/settimana/mese nella dashboard ↓
           EOF
