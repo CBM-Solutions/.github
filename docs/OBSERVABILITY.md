@@ -11,17 +11,20 @@ GitHub fornisce metriche org-level su Actions (GA marzo 2025, incluse nel piano 
 
 Dove: **Organization → Insights → Actions** (serve ruolo owner/admin). È il primo posto dove guardare per capire quali agenti girano di più, dove falliscono, quanto durano. Limite: viste aggregate (medie/percentuali), non per-run.
 
-## 2. Fleet Dashboard (workflow schedulato)
+## 2. Fleet Dashboard (workflow schedulato) — trend nel tempo
 
-`/.github/workflows/fleet-dashboard.yml` (nel repo `.github`) gira ogni giorno e:
-- interroga l'Actions API su tutti i repo della org;
-- aggrega le run dei workflow `Agent *` e `Fleet` per agente e per repo (success/failure/skipped, durata media);
+`/.github/workflows/fleet-dashboard.yml` (nel repo `.github`) gira **ogni giorno alle ~18:00 ora italiana** (`cron: 0 16 * * *` = 18:00 CEST estate / 17:00 CET inverno — il cron è UTC e non gestisce il DST; per ancorare le 18:00 all'ora solare usare `0 17 * * *`) e:
+- interroga l'Actions API su tutti i repo della org sulla finestra storica (`WINDOW_DAYS`, default **180 giorni**);
+- aggrega le run dei workflow `Agent *` in **trend per giorno, settimana (ISO) e mese** (run, success, failure, success-rate, durata media), così si possono leggere le tendenze nel tempo;
+- mantiene anche il riepilogo della finestra + breakdown per agente e per repo;
 - scrive **[`OBSERVABILITY.md`](../OBSERVABILITY.md)** (committato in radice del repo `.github`);
-- posta un riepilogo su Telegram con un bottone URL alla dashboard.
+- posta su Telegram uno snapshot oggi / settimana / mese con bottone URL alla dashboard.
+
+Parametri (env del job): `WINDOW_DAYS` (storico raccolto), `DAYS_SHOWN` (14), `WEEKS_SHOWN` (12), `MONTHS_SHOWN` (6).
 
 Attivazione: caricare su `.github` i secret `MASTER_BOARD_TOKEN` (PAT scope repo) e i `TELEGRAM_*`. Avvio manuale: **Actions → Fleet Dashboard → Run workflow**.
 
-> v1 traccia conteggi/durate/success-rate dai metadati delle run (economico). Il costo per-run (`total_cost_usd` nei log) non è incluso perché richiederebbe il download dei log di ogni run — enhancement futuro.
+> Traccia conteggi/durate/success-rate dai metadati delle run (economico). Il costo per-run (`total_cost_usd` nei log) non è incluso perché richiederebbe il download dei log di ogni run — enhancement futuro. Nota: i trend mensili sono affidabili solo entro la retention delle run di GitHub e il limite di paginazione (`--limit 500` per repo).
 
 ## 3. Production observability (app) — ⏸️ IN PAUSA
 

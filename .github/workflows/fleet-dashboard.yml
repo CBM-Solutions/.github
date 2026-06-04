@@ -1,7 +1,8 @@
 name: Fleet Dashboard
 
 # Aggrega le run degli agenti Claude (workflow "Agent *") su tutti i repo
-# dell'organizzazione, scrive OBSERVABILITY.md e posta un riepilogo su Telegram.
+# dell'organizzazione e costruisce TREND nel tempo (giorno / settimana / mese),
+# scrive OBSERVABILITY.md e posta un riepilogo su Telegram.
 # Singleton org-ops: gira solo in questo repo (.github). Serverless, zero infra.
 #
 # Secret richiesti su QUESTO repo (.github):
@@ -10,7 +11,10 @@ name: Fleet Dashboard
 
 on:
   schedule:
-    - cron: "0 7 * * *"   # ogni giorno 07:00 UTC
+    # 16:00 UTC = 18:00 ora italiana estiva (CEST). In inverno (CET) sono le 17:00:
+    # il cron di GitHub è in UTC e NON gestisce il DST. Per ancorare le 18:00 all'ora
+    # solare invernale, usare "0 17 * * *".
+    - cron: "0 16 * * *"
   workflow_dispatch:
 
 permissions:
@@ -26,7 +30,10 @@ jobs:
     env:
       ORG: CBM-Solutions
       GH_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
-      WINDOW_DAYS: "30"
+      WINDOW_DAYS: "180"     # storico raccolto: serve a costruire i trend mensili
+      DAYS_SHOWN: "14"       # righe nella tabella trend per giorno
+      WEEKS_SHOWN: "12"      # righe nella tabella trend per settimana (ISO)
+      MONTHS_SHOWN: "6"      # righe nella tabella trend per mese
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
@@ -39,30 +46,65 @@ jobs:
 
           repos=$(gh repo list "$ORG" --no-archived --limit 200 --json name --jq '.[].name')
 
-          : > "$TMP/rows.tsv"   # repo \t agent \t conclusion \t duration_s
+          # repo \t agent \t conclusion \t duration_s \t day(YYYY-MM-DD)
+          : > "$TMP/rows.tsv"
           for repo in $repos; do
-            # Solo run dei workflow che iniziano con "Agent " o "Fleet"
-            gh run list --repo "$ORG/$repo" --limit 100 \
+            gh run list --repo "$ORG/$repo" --limit 500 \
               --created ">$SINCE" \
               --json workflowName,conclusion,createdAt,updatedAt \
               --jq '.[] | select(.workflowName|test("^Agent ")) |
                     [ "'"$repo"'", .workflowName, (.conclusion // "running"),
-                      (( (.updatedAt|fromdateiso8601) - (.createdAt|fromdateiso8601) )|tostring) ] | @tsv' \
+                      (( (.updatedAt|fromdateiso8601) - (.createdAt|fromdateiso8601) )|tostring),
+                      (.createdAt[0:10]) ] | @tsv' \
               >> "$TMP/rows.tsv" 2>/dev/null || echo "skip $repo (nessun workflow/permesso)"
           done
 
+          # Mappa giorno -> settimana ISO (YYYY-Www) e mese (YYYY-MM) via GNU date.
+          # day \t week \t month
+          : > "$TMP/daymap.tsv"
+          cut -f5 "$TMP/rows.tsv" | sort -u | while read -r d; do
+            [ -n "$d" ] || continue
+            wk=$(date -u -d "$d" +%G-W%V)
+            printf '%s\t%s\t%s\n' "$d" "$wk" "${d:0:7}" >> "$TMP/daymap.tsv"
+          done
+
+          # trend <day|week|month> <n_righe>  -> bucket eff succ fail rate avgdur (TSV, ordinato, ultime n)
+          trend () {
+            awk -F'\t' -v bucket="$1" '
+              NR==FNR { wk[$1]=$2; mo[$1]=$3; next }
+              {
+                day=$5
+                key=(bucket=="day"?day:(bucket=="week"?wk[day]:mo[day]))
+                if (key=="") next
+                if ($3=="skipped") next
+                eff[key]++
+                if ($3=="success") s[key]++
+                if ($3=="failure") f[key]++
+                dur[key]+=$4
+              }
+              END {
+                for (k in eff) {
+                  rate=(eff[k]?sprintf("%d%%", s[k]*100/eff[k]):"n/a")
+                  printf "%s\t%d\t%d\t%d\t%s\t%d\n", k, eff[k], s[k]+0, f[k]+0, rate, (eff[k]?dur[k]/eff[k]:0)
+                }
+              }' "$TMP/daymap.tsv" "$TMP/rows.tsv" | sort | tail -n "$2"
+          }
+
+          # md_trend <day|week|month> <n> <label>  -> tabella markdown
+          md_trend () {
+            echo "| $3 | Run | ✅ | 🔴 | Rate | Durata media (s) |"
+            echo "|---|---|---|---|---|---|"
+            trend "$1" "$2" | awk -F'\t' '{printf "| %s | %d | %d | %d | %s | %d |\n",$1,$2,$3,$4,$5,$6}'
+          }
+
+          # --- Riepilogo aggregato sull'intera finestra ---
           total=$(wc -l < "$TMP/rows.tsv" | tr -d ' ')
           succ=$(awk -F'\t' '$3=="success"' "$TMP/rows.tsv" | wc -l | tr -d ' ')
           fail=$(awk -F'\t' '$3=="failure"' "$TMP/rows.tsv" | wc -l | tr -d ' ')
           skip=$(awk -F'\t' '$3=="skipped"' "$TMP/rows.tsv" | wc -l | tr -d ' ')
           eff=$((total - skip))
-          rate="n/a"
-          if [ "$eff" -gt 0 ]; then rate="$(( succ * 100 / eff ))%"; fi
+          rate="n/a"; if [ "$eff" -gt 0 ]; then rate="$(( succ * 100 / eff ))%"; fi
 
-          # Stima costo-equivalente: run (non-skipped) x costo medio misurato per agente
-          # (vedi docs/COSTI.md). NB: su abbonamento Max NON è fatturato a token —
-          # è un proxy utile solo per capire l'ordine di grandezza / pianificare un
-          # eventuale passaggio a cost-based (API key).
           EST=$(awk -F'\t' '
             BEGIN{
               c["Agent Summary"]=0.02; c["Agent Review"]=0.15; c["Agent Security"]=0.20;
@@ -74,11 +116,11 @@ jobs:
             END{ printf "%.2f", t+0 }' "$TMP/rows.tsv")
 
           {
-            echo "# 📊 Fleet Dashboard — agenti Claude (ultimi ${WINDOW_DAYS} giorni)"
+            echo "# 📊 Fleet Dashboard — trend agenti Claude"
             echo ""
-            echo "_Aggiornato: $(date -u +'%Y-%m-%d %H:%M UTC') · org \`${ORG}\`_"
+            echo "_Generato: $(date -u +'%Y-%m-%d %H:%M UTC') (~18:00 Europe/Rome) · org \`${ORG}\` · finestra ${WINDOW_DAYS} giorni_"
             echo ""
-            echo "## Riepilogo"
+            echo "## Riepilogo finestra (${WINDOW_DAYS} giorni)"
             echo ""
             echo "| Metrica | Valore |"
             echo "|---|---|"
@@ -89,7 +131,19 @@ jobs:
             echo "| ⏭️ Skipped (label non-match) | ${skip} |"
             echo "| 💸 Stima costo-equivalente | \$${EST} _(proxy, non fatturato su Max)_ |"
             echo ""
-            echo "## Per agente"
+            echo "## 📅 Trend per giorno (ultimi ${DAYS_SHOWN})"
+            echo ""
+            md_trend day "$DAYS_SHOWN" "Giorno"
+            echo ""
+            echo "## 🗓️ Trend per settimana (ultime ${WEEKS_SHOWN}, ISO)"
+            echo ""
+            md_trend week "$WEEKS_SHOWN" "Settimana"
+            echo ""
+            echo "## 📆 Trend per mese (ultimi ${MONTHS_SHOWN})"
+            echo ""
+            md_trend month "$MONTHS_SHOWN" "Mese"
+            echo ""
+            echo "## Per agente (finestra)"
             echo ""
             echo "| Agente | Run | Success | Failure | Durata media (s) | Stima costo |"
             echo "|---|---|---|---|---|---|"
@@ -107,7 +161,7 @@ jobs:
               for (a in cnt) printf "| %s | %d | %d | %d | %d | $%.2f |\n", a, cnt[a], s[a]+0, f[a]+0, (cnt[a]?dur[a]/cnt[a]:0), cost[a]+0
             }' "$TMP/rows.tsv" | sort
             echo ""
-            echo "## Per repository"
+            echo "## Per repository (finestra)"
             echo ""
             echo "| Repo | Run | Success | Failure |"
             echo "|---|---|---|---|"
@@ -118,16 +172,21 @@ jobs:
             }' "$TMP/rows.tsv" | sort
             echo ""
             echo "---"
-            echo "_Nota: il costo per-run (\`total_cost_usd\`) non è incluso in v1 perché"
-            echo "richiede il download dei log di ogni run. Da valutare come enhancement._"
+            echo "_I trend usano \`createdAt\` delle run; la settimana è ISO-8601 (lun-dom)._"
+            echo "_Costo per-run (\`total_cost_usd\`) non incluso: richiederebbe il download dei log di ogni run._"
           } > "$OUT"
 
-          echo "TOTAL=$eff" >> "$GITHUB_ENV"
-          echo "SUCC=$succ" >> "$GITHUB_ENV"
-          echo "FAIL=$fail" >> "$GITHUB_ENV"
-          echo "RATE=$rate" >> "$GITHUB_ENV"
-          echo "EST=$EST" >> "$GITHUB_ENV"
-          echo "SKIP=$skip" >> "$GITHUB_ENV"
+          # Snapshot ultimo periodo per Telegram (singola riga ciascuno)
+          fmt_tg () { awk -F'\t' 'NF{printf "%s · %d run · %s · %d🔴", $1,$2,$5,$4}'; }
+          D_TODAY=$(trend day 1 | fmt_tg);  [ -n "$D_TODAY" ] || D_TODAY="n/d"
+          W_THIS=$(trend week 1 | fmt_tg);  [ -n "$W_THIS" ] || W_THIS="n/d"
+          M_THIS=$(trend month 1 | fmt_tg); [ -n "$M_THIS" ] || M_THIS="n/d"
+
+          {
+            echo "TOTAL=$eff"; echo "SUCC=$succ"; echo "FAIL=$fail"; echo "RATE=$rate"
+            echo "EST=$EST"; echo "SKIP=$skip"
+            echo "D_TODAY=$D_TODAY"; echo "W_THIS=$W_THIS"; echo "M_THIS=$M_THIS"
+          } >> "$GITHUB_ENV"
 
       - name: Commit dashboard se cambiato
         run: |
@@ -143,7 +202,7 @@ jobs:
             git push
           fi
 
-      - name: Riepilogo su Telegram (FinOps/observability)
+      - name: Riepilogo su Telegram (trend)
         env:
           BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -155,16 +214,17 @@ jobs:
           NOW=$(date -u +'%Y-%m-%d %H:%M UTC')
           # Newline REALI (no %0A) + parse_mode HTML (robusto con _ nei nomi).
           MSG=$(cat <<EOF
-          📊 <b>Fleet Dashboard</b> · ultimi ${WINDOW_DAYS} giorni
-          <i>aggiornato ${NOW}</i>
+          📊 <b>Fleet Dashboard</b> · trend agenti
+          <i>aggiornato ${NOW} (~18:00 Europe/Rome)</i>
 
-          ▫️ Run totali: <b>${TOTAL}</b>
-          ✅ Success: <b>${SUCC}</b>   🔴 Failure: <b>${FAIL}</b>
-          📈 Success rate: <b>${RATE}</b>
-          ⏭️ Skipped (label non-match): ${SKIP}
-          💸 Stima costo: <b>~\$${EST}</b> <i>(proxy, non fatturato su Max)</i>
+          📅 Oggi: <b>${D_TODAY}</b>
+          🗓️ Settimana: <b>${W_THIS}</b>
+          📆 Mese: <b>${M_THIS}</b>
 
-          Dettaglio per agente e per repo nella dashboard ↓
+          Finestra ${WINDOW_DAYS}gg → ▫️ ${TOTAL} run · ✅ ${SUCC} · 🔴 ${FAIL} · 📈 ${RATE}
+          💸 Stima costo: ~\$${EST} <i>(proxy, non fatturato su Max)</i>
+
+          Trend per giorno/settimana/mese nella dashboard ↓
           EOF
           )
           KEYBOARD=$(printf '{"inline_keyboard":[[{"text":"📈 Apri dashboard","url":"%s"}]]}' "$DASH_URL")
