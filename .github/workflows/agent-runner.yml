@@ -80,6 +80,18 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
+      # === 8A — Egress monitoring (anti-esfiltrazione) ===
+      # harden-runner monitora TUTTE le connessioni di rete in uscita del runner
+      # prima di ogni altro step. Modalità "audit": non blocca, registra soltanto
+      # (link Insights nel log) → costruiamo l'allowlist dei domini legittimi
+      # (api.anthropic.com, github.com, registry pkg) e poi passeremo a "block".
+      # Difesa di rete che i --disallowedTools da soli non coprono (lethal trifecta).
+      # Deve restare il PRIMO step per intercettare l'intero traffico del job.
+      - name: Harden runner (egress audit)
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: ${{ inputs.fetch_depth }}
