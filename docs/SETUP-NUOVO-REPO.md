@@ -77,7 +77,7 @@ Il reusable esegue `step-security/harden-runner` come primo step di ogni run (mo
 
 ### Chaining fix→review (Fase 8D) — opt-in
 
-Per far partire la code review automaticamente dopo che `agent:fix`/`agent:docs`/ecc. apre una PR, imposta `chain_review: true` nel `with:` del caller (default off). Applica la label `agent:review` alla PR appena creata. Abilitalo solo dove la review automatica vale il costo extra di run.
+Per far partire la code review automaticamente dopo che `agent:fix`/`agent:docs`/ecc. apre una PR, imposta `chain_review: true` nel `with:` del caller (default off). Applica la label `agent:review` alla PR appena creata. Abilitalo solo dove la review automatica vale il costo extra di run. **Richiede `MASTER_BOARD_TOKEN`** (PAT scope repo): il `GITHUB_TOKEN` di default non propaga eventi e non farebbe partire la review.
 
 ---
 

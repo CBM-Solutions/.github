@@ -243,6 +243,8 @@ Configurazione centralizzata nel reusable `agent-runner.yml` (override via varia
 
 **Agent-chaining fix→review (Fase 8D, opt-in):** il reusable espone l'input `chain_review` (default **off**). Quando un caller PR-creator lo imposta a `true`, dopo l'apertura della PR il sistema applica automaticamente la label `agent:review` alla PR → la code review parte da sola. È **disattivato di default** per non moltiplicare run/consumi: si abilita per repo/agente dove la review automatica vale il costo (es. sul sandbox è attivo su `agent:fix`). In alternativa resta sempre possibile applicare `agent:review`/`agent:security` a mano.
 
+> ⚠️ Il chaining richiede **`MASTER_BOARD_TOKEN`** (PAT con scope repo): la label deve essere applicata con un token "utente", perché gli eventi generati dal `GITHUB_TOKEN` di default **non innescano** altri workflow (anti-ricorsione di GitHub). Se il PAT manca, il reusable logga un warning e salta il chaining (non fallisce).
+
 ---
 
 ## Limiti, costi, performance
