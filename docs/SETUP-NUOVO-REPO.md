@@ -71,6 +71,14 @@ Copia `CLAUDE.md` nella **root del repo** (sorgente in `workflow-templates/CLAUD
 
 I prompt degli agenti vivono come **Agent Skills centrali** in `CBM-Solutions/.github/.claude/skills/`. Il reusable `agent-runner.yml` le carica a runtime (`use_skills: true`) e le esclude dal commit: **non** devi copiarle nel tuo repo. Per modificarle vedi `docs/AGENTI.md → Modificare il prompt di un agente`.
 
+### Egress monitoring (Fase 8A) — automatico
+
+Il reusable esegue `step-security/harden-runner` come primo step di ogni run (modalità `audit`): **nessuna azione di setup richiesta**. Su repo **pubblici** il link Insights con i domini contattati è gratuito; su repo **privati** il monitoraggio funziona comunque, ma la dashboard Insights di StepSecurity può richiedere un tier dedicato. In `audit` non blocca nulla: serve a costruire l'allowlist prima di un eventuale passaggio a `block`.
+
+### Chaining fix→review (Fase 8D) — opt-in
+
+Per far partire la code review automaticamente dopo che `agent:fix`/`agent:docs`/ecc. apre una PR, imposta `chain_review: true` nel `with:` del caller (default off). Applica la label `agent:review` alla PR appena creata. Abilitalo solo dove la review automatica vale il costo extra di run.
+
 ---
 
 ## Step 3 — Eseguire il bootstrap label

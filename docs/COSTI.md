@@ -25,10 +25,12 @@ Setup (una volta, a livello org): **Settings → Billing → Budgets and alerts 
 > Repo **pubblici** = minuti standard-runner **gratis e illimitati** (esclusi anche dal platform charge $0.002/min di gen-2026). Dove possibile, tenere gli agenti su repo pubblici azzera il problema minuti.
 
 ### Fleet Dashboard — report costi/run
-Il workflow `fleet-dashboard.yml` (vedi `OBSERVABILITY.md`) aggrega run, success-rate e durate degli agenti e posta un riepilogo su Telegram. È il "report FinOps" proxy del sistema.
+Il workflow `fleet-dashboard.yml` (vedi `OBSERVABILITY.md`) aggrega run, success-rate e durate degli agenti e posta un riepilogo su Telegram. È il "report FinOps" del sistema. Dalla **Fase 8C** riporta due metriche aggiuntive:
+- **Costo REALE campionato**: estrae `total_cost_usd` dai log delle ultime `COST_SAMPLE` (default 20) run riuscite e ne calcola totale e media/run. Serve a **calibrare la stima proxy** con numeri reali (soggetto alla retention dei log GitHub: campiona le run più recenti).
+- **Override-rate**: % di PR `app/claude` **decise** (merge vs chiuse-senza-merge) che l'umano ha **rifiutato**. È il segnale di **qualità** reale degli agenti PR-creator (equivalente al *break-glass rate* dei team del settore): se sale, conviene rivedere prompt/skill dell'agente.
 
 ### ⚠️ Gap: visibilità quota Claude Max
-**Non esiste (verificato, 2026) un meccanismo pubblico di telemetria real-time sul consumo della quota/rate-limit dell'abbonamento Max via token OAuth.** A differenza dell'API-key (fatturata a token, tracciabile), il consumo Max non è ispezionabile programmaticamente. Conseguenza: il monitoraggio dei costi-agente si basa su **proxy** — numero di run, durate, e `total_cost_usd` stimato nei log della action — non su telemetria diretta della quota.
+**Non esiste (verificato, 2026) un meccanismo pubblico di telemetria real-time sul consumo della quota/rate-limit dell'abbonamento Max via token OAuth.** A differenza dell'API-key (fatturata a token, tracciabile), il consumo Max non è ispezionabile programmaticamente. Conseguenza: il monitoraggio dei costi-agente combina il **costo reale campionato** (`total_cost_usd` dai log, vedi sopra) con la **stima proxy** (numero run × costo modellato per agente) — non c'è telemetria diretta della quota Max.
 
 Se in futuro servisse precisione sui costi (alto volume), l'opzione è un agente dedicato su **API-key** (a token, tracciabile) per quei task specifici, accettando il costo marginale.
 

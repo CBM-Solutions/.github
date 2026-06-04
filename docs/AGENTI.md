@@ -241,7 +241,7 @@ Configurazione centralizzata nel reusable `agent-runner.yml` (override via varia
 
 **Retry su rate-limit (Fase 7C):** gli agenti read-only (`summary`/`review`/`security`/`iac`) hanno `enable_retry: true` → un singolo retry con backoff 60s se l'action fallisce (utile sui 429 di Claude Max). I PR-creator **non** ritentano per non rischiare PR duplicate.
 
-**Agent-chaining (opt-in, oggi manuale):** dopo che un PR-creator apre la PR, puoi applicare manualmente `agent:review`/`agent:security` per innescare la review. L'automazione (chaining fix→review) è volutamente **disattivata di default** per non moltiplicare i run/consumi; si può abilitare in futuro con un input dedicato nel reusable.
+**Agent-chaining fix→review (Fase 8D, opt-in):** il reusable espone l'input `chain_review` (default **off**). Quando un caller PR-creator lo imposta a `true`, dopo l'apertura della PR il sistema applica automaticamente la label `agent:review` alla PR → la code review parte da sola. È **disattivato di default** per non moltiplicare run/consumi: si abilita per repo/agente dove la review automatica vale il costo (es. sul sandbox è attivo su `agent:fix`). In alternativa resta sempre possibile applicare `agent:review`/`agent:security` a mano.
 
 ---
 
@@ -333,6 +333,16 @@ Stessa disciplina di immutabilità del pin SHA (6A). Per editing rapido in dev: 
 - **Zizmor scan** (`zizmor-scan.yml`): scanner statico che gira su ogni push/PR ai workflow e fallisce su `unpinned-uses` / `template-injection` / `excessive-permissions`. È il guardiano permanente contro le regressioni.
 - **Least-privilege**: i permessi del `GITHUB_TOKEN` sono scopati per-job; gli agenti read-only (`summary`/`review`/`security`/`iac`) hanno `contents: read`.
 - **Input non fidato**: il corpo della issue è passato solo come prompt (`with:`), mai interpolato in un blocco `run:` (che sarebbe shell-injection). Non aprire gli agenti a contributor esterni via `allowed_non_write_users`.
+- **Egress monitoring (Fase 8A)**: il reusable esegue `step-security/harden-runner` (SHA-pinned) come **primo step** di ogni run, in modalità `audit`: registra tutte le connessioni di rete in uscita del runner (link Insights nel log) senza bloccarle. Chiude il gap di network-egress allowlisting che i `--disallowedTools` da soli non coprono (difesa contro la *lethal trifecta*: input non fidato + secret + canale d'uscita). Allineato ai pattern di settore (Agent Workflow Firewall di GitHub gh-aw, firewall del Copilot coding agent). **Prossimo passo**: estrarre dai log Insights l'allowlist dei domini legittimi (`api.anthropic.com`, `github.com`, registry pacchetti) e passare a `egress-policy: block`.
+
+### ⚠️ Da valutare con il team (decisioni aperte)
+
+Due hardening identificati nel cross-eval coi pattern di settore (2026) ma **rimandati a decisione di team** perché cambiano l'auth/credenziali (non vincoli tecnici, ma scelte operative):
+
+- **`MASTER_BOARD_TOKEN` è un PAT statico.** Anthropic e i post-mortem di supply-chain (Clinejection 2026) avvertono che un token statico è teoricamente recuperabile nel tempo via prompt-injection e **non ruota**. Mitigazioni da valutare: (a) renderlo **fine-grained con scadenza breve** e scope minimo (`project: write`), oppure (b) sostituirlo con un **GitHub App token** generato al volo per-run. Nota: oggi il PAT è già scopato per-step (non raggiunge lo step Claude), quindi il residuo è basso ma non nullo.
+- **Workload Identity Federation (WIF) per l'auth Claude.** `claude-code-action` v1 supporta `anthropic_federation_rule_id` → nessun token OAuth stored nel repo (scambio OIDC short-lived). Eliminerebbe il secret `CLAUDE_CODE_OAUTH_TOKEN` a riposo, ma richiede setup org e va verificato che sia compatibile con l'abbonamento Max (oggi usiamo l'OAuth token del piano). **Da validare con un PoC** prima di qualsiasi migrazione.
+
+Decisione: entrambi richiedono un confronto di team su trade-off operativi → non implementati in Fase 8.
 
 ### Residuo di rischio accettato
 
