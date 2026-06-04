@@ -255,13 +255,22 @@ jobs:
       # Se chain_review=true, applica la label agent:review alla PR appena aperta:
       # innesca il workflow Agent Review (trigger pull_request:labeled) in automatico.
       # Default off (il caller deve esplicitarlo) per non moltiplicare i run/costi.
+      #
+      # IMPORTANTE: la label va applicata con MASTER_BOARD_TOKEN (PAT), NON con
+      # GITHUB_TOKEN: gli eventi generati dal GITHUB_TOKEN di default NON innescano
+      # altri workflow (anti-ricorsione di GitHub) → la review non partirebbe.
+      # Serve quindi un MASTER_BOARD_TOKEN con scope repo (issues/PR write).
       - name: Chain review sulla PR (opt-in)
         if: ${{ inputs.is_pr_creator && inputs.chain_review && steps.find-pr.outputs.pr_num != '' }}
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
           PR_NUM: ${{ steps.find-pr.outputs.pr_num }}
           REPO: ${{ github.repository }}
         run: |
-          echo "Chaining: applico label agent:review a PR #$PR_NUM"
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::warning::chain_review attivo ma MASTER_BOARD_TOKEN assente: la review non sara' innescata (il GITHUB_TOKEN non propaga eventi). Salto."
+            exit 0
+          fi
+          echo "Chaining: applico label agent:review a PR #$PR_NUM (via PAT, innesca Agent Review)"
           gh pr edit "$PR_NUM" --repo "$REPO" --add-label "agent:review"
