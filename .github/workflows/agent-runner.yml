@@ -269,8 +269,13 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           if [ -z "${GH_TOKEN:-}" ]; then
-            echo "::warning::chain_review attivo ma MASTER_BOARD_TOKEN assente: la review non sara' innescata (il GITHUB_TOKEN non propaga eventi). Salto."
+            echo "::warning::chain_review attivo ma MASTER_BOARD_TOKEN assente: review non innescata (il GITHUB_TOKEN non propaga eventi). Salto."
             exit 0
           fi
           echo "Chaining: applico label agent:review a PR #$PR_NUM (via PAT, innesca Agent Review)"
-          gh pr edit "$PR_NUM" --repo "$REPO" --add-label "agent:review"
+          # Il PAT deve avere scope repo (issues:write): con un token project-only
+          # l'API addLabelsToLabelable risponde "Resource not accessible". Degradiamo
+          # con un warning chiaro invece di un errore mascherato da continue-on-error.
+          if ! gh pr edit "$PR_NUM" --repo "$REPO" --add-label "agent:review"; then
+            echo "::warning::chain_review: impossibile applicare agent:review. Il MASTER_BOARD_TOKEN serve scope repo (issues:write) e deve innescare i workflow. Chaining NON eseguito."
+          fi
