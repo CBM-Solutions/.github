@@ -2,7 +2,7 @@
 
 Benvenuto. Questo documento ti porta da zero a operativo in **circa 15 minuti**. È una checklist d'azione — la spiegazione completa di come funziona il sistema sta in [`docs/AGENTI.md`](docs/AGENTI.md), leggila dopo aver completato il setup.
 
-> **Cos'è in due righe:** ogni repo della org può attivare 10 agenti Claude (`fix`, `review`, `docs`, `test`, `refactor`, `summary`, `security`, `cicd`, `iac`, `maintain`) applicando un'etichetta `agent:*` a una issue o PR. L'esecuzione gira su runner GitHub, autenticata sull'abbonamento Claude Max, e si integra con il **Master Board** (Project v2 #4) e con notifiche Telegram.
+> **Cos'è in due righe:** ogni repo della org può attivare 11 agenti Claude (`fix`, `feature`, `review`, `docs`, `test`, `refactor`, `summary`, `security`, `cicd`, `iac`, `maintain`) applicando un'etichetta `agent:*` a una issue o PR. L'esecuzione gira su runner GitHub, autenticata sull'abbonamento Claude Max, e si integra con il **Master Board** (Project v2 #4) e con notifiche Telegram.
 
 > **Architettura (Fase 7):** ogni agente è un *thin caller* che richiama un unico reusable workflow centralizzato (`CBM-Solutions/.github/.github/workflows/agent-runner.yml`) — logica comune, pin SHA e sicurezza in un solo punto. Ogni agente legge `CLAUDE.md` dalla root del repo per grounding (convenzioni + regole di sicurezza).
 
@@ -85,7 +85,7 @@ Tutto **da remoto** (app GitHub mobile o browser, niente CLI). Esempio: aggiunge
 - Per una **feature grande**, spezzala in più issue/PR: gli agenti rendono meglio sul diff piccolo (è anche una regola del `CLAUDE.md`).
 - L'agente **propone**, l'umano è il **merge-gate**. Verifica sempre la PR.
 - Se i test del repo falliscono, l'agente è istruito a **non** presentare la PR come pronta ma a segnalarlo nel corpo.
-- Oggi non c'è un `agent:feature` dedicato: `agent:fix` è il generalista issue→PR e copre bene le nuove funzionalità con una issue ben scritta.
+- Per una **funzionalità nuova e articolata** usa **`agent:feature`**: pianifica, apre la PR del *core* e propone i task da delegare agli agenti specialisti. Per una modifica piccola e diretta resta meglio `agent:fix`.
 
 ---
 
@@ -94,6 +94,7 @@ Tutto **da remoto** (app GitHub mobile o browser, niente CLI). Esempio: aggiunge
 | Quando vuoi… | Usa | Trigger |
 |---|---|---|
 | Una PR che fixa un bug descritto in issue | `agent:fix` | label su issue |
+| Pianificare + avviare una **funzionalità nuova** (piano + PR core + task delegati) | `agent:feature` | label su issue |
 | Una code review automatica della PR aperta | `agent:review` | label su PR |
 | Aggiornare README/docs in base a una issue | `agent:docs` | label su issue |
 | Aggiungere unit/integration test | `agent:test` | label su issue |

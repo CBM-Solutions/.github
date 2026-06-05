@@ -19,18 +19,19 @@ Tempo richiesto: **~10 minuti** se hai già i token a portata di mano.
 1. Apri il tuo repo → tab **Actions**.
 2. Click **"New workflow"** → in alto trovi la categoria **"Workflows created by CBM-Solutions"**.
 3. Adotta in quest'ordine, uno alla volta (ogni adozione crea un commit):
-   1. **Bootstrap Agent Labels** — crea le 10 label `agent:*`
+   1. **Bootstrap Agent Labels** — crea le 11 label `agent:*`
    2. **Agent Summary** (read-only, il più sicuro per primo test)
    3. **Agent Fix**
-   4. **Agent Review**
-   5. **Agent Docs**
-   6. **Agent Test**
-   7. **Agent Refactor**
-   8. **Agent Security**
-   9. **Agent CICD**
-   10. **Agent IaC**
-   11. **Agent Maintain**
-   12. **Notify Agent Failure (Telegram)**
+   4. **Agent Feature** (planner multi-agent, Opus)
+   5. **Agent Review**
+   6. **Agent Docs**
+   7. **Agent Test**
+   8. **Agent Refactor**
+   9. **Agent Security**
+   10. **Agent CICD**
+   11. **Agent IaC**
+   12. **Agent Maintain**
+   13. **Notify Agent Failure (Telegram)**
 
 Suggerimento: se sai già che non userai mai certi agenti su questo repo, saltali — sempre adottabili in seguito.
 

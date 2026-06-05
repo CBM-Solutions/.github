@@ -1,0 +1,37 @@
+name: Agent Feature
+on:
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: agent-${{ github.workflow }}-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    if: github.event.label.name == 'agent:feature'
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    uses: CBM-Solutions/.github/.github/workflows/agent-runner.yml@34818b94172ff8d4006af4a0deab64bf85fc0e98
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      MASTER_BOARD_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
+    with:
+      is_pr_creator: true
+      branch_prefix: feature
+      use_skills: true
+      # skills_ref esplicito: commit di .github che include la skill agent-feature.
+      skills_ref: "7380d7b45869b7bc02ccb3f0e4c3a72863a8cf39"
+      model: claude-opus-4-8
+      allowed_tools: "Edit,Write,Read,MultiEdit,Glob,Grep,Bash(gh issue comment:*),Bash(gh issue create:*),Bash(gh issue view:*),Bash(gh pr create:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(git:*)"
+      prompt: |
+        /agent-feature
+
+        REPO: ${{ github.repository }}
+        ISSUE #${{ github.event.issue.number }}: ${{ github.event.issue.title }}
+
+        ${{ github.event.issue.body }}

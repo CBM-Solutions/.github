@@ -50,6 +50,7 @@ Ogni repo della org può adottare i workflow template di questa centrale per att
 | Etichetta | Cosa fa |
 |---|---|
 | `agent:fix` | Apre una PR che risolve la issue |
+| `agent:feature` | Pianifica una feature, apre la PR core e decompone i task (coordinatore multi-agent) |
 | `agent:review` | Code review strutturata su PR o issue |
 | `agent:docs` | Aggiorna README e documentazione |
 | `agent:test` | Genera o sistema i test |
@@ -63,7 +64,7 @@ Ogni repo della org può adottare i workflow template di questa centrale per att
 ### 🔌 Setup su un nuovo repo
 
 Dal picker **Actions → New workflow** del repo target adottare:
-1. `Bootstrap Agent Labels` → eseguire una volta via `workflow_dispatch` per creare le 10 etichette `agent:*`.
+1. `Bootstrap Agent Labels` → eseguire una volta via `workflow_dispatch` per creare le 11 etichette `agent:*`.
 2. Tutti gli starter workflow `Agent *` che si vogliono attivare (uno per agente). Ognuno è un *thin caller* che richiama il reusable centralizzato `CBM-Solutions/.github/.github/workflows/agent-runner.yml`.
 3. `Notify Agent Failure (Telegram)` per ricevere alert sui run falliti.
 4. Copiare `CLAUDE.md` nella root del repo (grounding: convenzioni + regole di sicurezza lette da ogni agente).

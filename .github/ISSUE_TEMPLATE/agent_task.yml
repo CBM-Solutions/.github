@@ -15,6 +15,7 @@ body:
       description: Quale agente deve gestire questo task
       options:
         - fix
+        - feature
         - review
         - docs
         - test

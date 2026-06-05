@@ -42,7 +42,7 @@ Nessun server. Nessun webhook gateway. Tutto su infrastruttura GitHub + abboname
 
 ---
 
-## I 10 agenti in dettaglio
+## Gli 11 agenti in dettaglio
 
 ### `agent:fix` — Risolutore di bug
 
@@ -56,7 +56,7 @@ Nessun server. Nessun webhook gateway. Tutto su infrastruttura GitHub + abboname
 - Scope contenuto (1-3 file)
 
 **Quando NON usarlo:**
-- Feature nuove (Claude tende a sovrascrivere troppo)
+- Feature nuove e articolate → usa **`agent:feature`** (pianifica e decompone)
 - Bug architetturali profondi
 - Issue vaghe ("non funziona", "lento")
 
@@ -65,6 +65,28 @@ Nessun server. Nessun webhook gateway. Tutto su infrastruttura GitHub + abboname
 
 **Esempio scarso:**
 > il login non va
+
+### `agent:feature` — Coordinatore di funzionalità (planner multi-agent)
+
+**Trigger:** label su una issue. **Modello:** `claude-opus-4-8` (pianificazione = task ad alto ragionamento).
+
+**Cosa fa:** è l'agente "advanced" per le nuove funzionalità. Indaga il codice, **pianifica** l'approccio, implementa la **fetta core** coerente su un branch `agent/feature-<N>` e apre una PR, poi **decompone** il lavoro restante in task delegati agli agenti specialisti (`agent:test`, `agent:docs`, `agent:cicd`, `agent:iac`, `agent:fix`) — una tabella di sotto-task pronti da etichettare. Commenta la issue col piano. È il pattern *coordinatore → specialisti*.
+
+**Quando usarlo:**
+- Funzionalità nuova che tocca più aspetti (codice + test + docs + CI)
+- Lavoro abbastanza grande da meritare un piano e una decomposizione
+- Vuoi una PR core revisionabile + una roadmap di follow-up delegabili
+
+**Quando NON usarlo:**
+- Bug puntuale o piccola modifica → `agent:fix` (più diretto)
+- Task mono-dimensionale (solo test / solo docs) → l'agente specifico
+
+**Esempio buono di issue:**
+> Aggiungere un endpoint `GET /health` che verifica connessione DB e ritorna `{status, dbLatencyMs}`. Criteri: 200 se DB ok, 503 se down; loggare la latenza. Va documentato e testato.
+
+**Output:** PR con sezioni *Piano / Implementato (core) / Task delegati (tabella agente→sotto-task) / Come testare*. La review/esecuzione dei sotto-task resta una scelta umana (vedi nota sul chaining/token in *Sicurezza e governance*).
+
+> ⚠️ **Delega automatica**: oggi `agent:feature` **propone** i sotto-task (non li crea/etichetta da solo). L'auto-fan-out — creare le sotto-issue e applicare le label per attivare gli specialisti — richiede un token con scope repo `issues:write` che inneschi i workflow (stessa dipendenza del chaining 8D → **decisione G2**). Finché non risolta, la delega è manuale: applichi tu le label proposte.
 
 ### `agent:review` — Code review automatica
 
@@ -224,7 +246,7 @@ Quando trigghi un agente, il sistema fa automaticamente:
 
 1. **Esecuzione su runner effimero** GitHub (Ubuntu, 7GB RAM, distrutto a fine job)
 2. **Commento dell'agente** sulla issue/PR target
-3. **PR creata** (per `fix`, `docs`, `test`, `refactor`, `cicd`, `maintain`) sul branch `<tipo>/<descrizione>`
+3. **PR creata** (per `fix`, `feature`, `docs`, `test`, `refactor`, `cicd`, `maintain`) sul branch `<tipo>/<descrizione>`
 4. **Aggiunta al Master Board** (Project #4)
 5. **Status = "Test"** se è stata aperta una PR
 6. **Reviewer assegnato round-robin** dal pool `AGENT_REVIEWERS` (default `montafra,K0enjy,Belletz-28`, evitando l'autore della issue)
@@ -265,7 +287,7 @@ Configurazione attuale dei template:
 |---|---|---|
 | `claude-haiku-4-5` | `summary` | Task breve read-only, ~10× più economico |
 | `claude-sonnet-4-6` | `fix`, `docs`, `test`, `refactor`, `cicd`, `maintain`, `iac` | Best balance qualità/costo per coding |
-| `claude-opus-4-8` | `security`, `review` | Migliore recall su bug e vulnerabilità |
+| `claude-opus-4-8` | `security`, `review`, `feature` | Recall su bug/vulnerabilità (security/review) e qualità di pianificazione/decomposizione (feature) |
 
 > Il parametro `effort` (es. `xhigh` per coding) è a livello API e non è esposto come flag CLI in `claude_args`; lo steering equivalente si ottiene via prompt e scelta del modello. Per i task dove serve più ragionamento, il modello Opus + prompt "ragiona attentamente prima di agire" è la leva.
 
@@ -275,6 +297,7 @@ Configurazione attuale dei template:
 |---|---|---|
 | `summary` | 30s, 4 turn | ~$0.06 |
 | `fix` (1-2 file) | 1-2min, 4-8 turn | ~$0.05-0.15 |
+| `feature` (Opus, piano + core) | 2-5min, più turn | ~$0.20-0.50 |
 | `docs` | 1-3min | ~$0.05-0.10 |
 | `test` (con esecuzione) | 2-5min | ~$0.10-0.30 |
 | `refactor` | 1-3min | ~$0.08-0.20 |
@@ -303,7 +326,7 @@ Solo chi ha **write access** sul repo. È una guardia nativa di GitHub Actions s
 ### Cosa l'agente può fare
 
 Tutto ciò che il `GITHUB_TOKEN` del runner permette (vedi `permissions:` in ciascun workflow):
-- `fix/docs/test/refactor/cicd/maintain`: read+write su `contents`, `pull-requests`, `issues`
+- `fix/feature/docs/test/refactor/cicd/maintain`: read+write su `contents`, `pull-requests`, `issues`
 - `review/summary/security/iac`: read su `contents`, write su `pull-requests` e `issues` (per commentare)
 
 L'agente NON ha:

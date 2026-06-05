@@ -56,6 +56,7 @@ server, niente sempre-acceso.
 | Etichetta | Ruolo | Apre PR? |
 |---|---|---|
 | `agent:fix` | risolve la issue | sì |
+| `agent:feature` | pianifica feature + decompone task (coordinatore multi-agent) | sì |
 | `agent:docs` | aggiorna documentazione | sì |
 | `agent:test` | scrive/sistema test | sì |
 | `agent:refactor` | refactor di manutenibilità | sì |

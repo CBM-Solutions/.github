@@ -6,6 +6,7 @@ on:
   workflow_run: # zizmor: ignore[dangerous-triggers]
     workflows:
       - "Agent Fix"
+      - "Agent Feature"
       - "Agent Review"
       - "Agent Docs"
       - "Agent Test"

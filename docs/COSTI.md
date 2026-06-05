@@ -45,6 +45,7 @@ Dati misurati sul repo `agent-sandbox` durante validazione iniziale.
 | `summary` (read-only) | 30-45s | 4 | ~$0.06 |
 | `review` (PR media) | 60-90s | 5-8 | ~$0.05-0.10 |
 | `fix` (1-2 file) | 60-120s | 4-8 | ~$0.05-0.15 |
+| `feature` (Opus, piano + core) | 120-300s | molti | ~$0.20-0.50 |
 | `docs` | 60-180s | 5-10 | ~$0.05-0.10 |
 | `refactor` | 60-180s | 5-12 | ~$0.08-0.20 |
 | `test` (con run suite) | 120-300s | 6-15 | ~$0.10-0.30 |
