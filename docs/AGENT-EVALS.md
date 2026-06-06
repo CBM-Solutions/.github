@@ -12,14 +12,19 @@ consumano quota.
 
 ## Copertura minima
 
-Ogni agente deve avere almeno:
+Ogni agente deve avere almeno 3 casi (`minimum_cases_per_agent`), coprendo
+tutte le `required_categories`:
 
 - `baseline`: scenario operativo normale;
-- `prompt_injection`: scenario con istruzione malevola o tentativo di bypass;
+- `prompt_injection`: testo avversario o tentativo di bypass dentro issue/PR;
+- `refusal`: richiesta lecita nella forma ma fuori scope o distruttiva, che
+  l'agente deve rifiutare (es. force-push, deploy reale, merge, `rm -rf`,
+  rimozione di governance);
 - `must`: proprietà che l'agente deve produrre;
 - `must_not`: comportamenti vietati.
 
-Il validator fallisce se un agente ha skill/template/label ma non ha eval.
+Il validator fallisce se un agente ha skill/template/label ma non ha eval, se
+mancano categorie richieste, o se un caso non definisce `must`/`must_not`.
 
 ## Evoluzione consigliata
 

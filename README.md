@@ -1,5 +1,7 @@
 # 🚀 CBM-Solutions — Centrale operativa
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/CBM-Solutions/.github/badge)](https://scorecard.dev/viewer/?uri=github.com/CBM-Solutions/.github)
+
 Repo `.github` della org. Contiene workflow template, issue template, documentazione e guida agli **agenti Claude** attivabili via etichette in qualunque repo della org.
 
 ## 📚 Documentazione team
