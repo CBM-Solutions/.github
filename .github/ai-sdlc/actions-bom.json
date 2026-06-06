@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "updated": "2026-06-06",
+  "description": "Provenance inventory (SBOM-lite) of every GitHub Action and reusable workflow consumed by the control plane. Every uses: across .github/workflows/** and workflow-templates/** must be SHA-pinned and listed here; validate_ai_sdlc.py enforces bidirectional parity so the BOM cannot drift from the actual pins.",
+  "components": [
+    {"action": "step-security/harden-runner", "sha": "9af89fc71515a100421586dfdb3dc9c984fbf411", "version": "v2.19.4", "type": "third-party", "purpose": "egress audit/block network hardening"},
+    {"action": "actions/checkout", "sha": "34e114876b0b11c390a56381ad16ebd13914f8d5", "version": "v4.3.1", "type": "first-party-github", "purpose": "repo checkout"},
+    {"action": "anthropics/claude-code-action", "sha": "787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251", "version": "v1.0.133", "type": "third-party", "purpose": "Claude agent runtime"},
+    {"action": "actions/add-to-project", "sha": "244f685bbc3b7adfa8466e08b698b5577571133e", "version": "v1.0.2", "type": "first-party-github", "purpose": "Master Board pipeline"},
+    {"action": "crazy-max/ghaction-github-labeler", "sha": "24d110aa46a59976b8a7f35518cb7f14f434c916", "version": "v5.3.0", "type": "third-party", "purpose": "labels bootstrap"},
+    {"action": "ossf/scorecard-action", "sha": "f49aabe0b5af0936a0987cfb85d86b75731b0186", "version": "v2.4.1", "type": "third-party", "purpose": "supply-chain scoring"},
+    {"action": "actions/upload-artifact", "sha": "4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1", "version": "v4.6.1", "type": "first-party-github", "purpose": "Scorecard SARIF artifact"},
+    {"action": "github/codeql-action/upload-sarif", "sha": "dd903d2e4f5405488e5ef1422510ee31c8b32357", "version": "v3", "type": "first-party-github", "purpose": "code-scanning SARIF upload"},
+    {"action": "CBM-Solutions/.github/.github/workflows/agent-runner.yml", "sha": "34818b94172ff8d4006af4a0deab64bf85fc0e98", "version": "8D", "type": "internal-reusable", "purpose": "centralized agent runner called by every template"}
+  ]
+}

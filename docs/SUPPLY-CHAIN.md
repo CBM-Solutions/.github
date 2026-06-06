@@ -3,6 +3,15 @@
 ## Stato attuale
 
 - Workflow e action critiche sono pinnate a SHA.
+- **Pin enforcement**: `validate_ai_sdlc.py` fallisce se un `uses:` in
+  `.github/workflows/**` o `workflow-templates/**` non è pinnato a SHA a 40 cifre
+  (oltre allo scan `unpinned-uses` di `zizmor`).
+- **Actions-BOM**: `.github/ai-sdlc/actions-bom.json` inventaria ogni action e
+  reusable con SHA + versione; il validator verifica parità bidirezionale con i
+  pin reali, quindi l'inventario non può andare in drift.
+- **OpenSSF Scorecard**: `.github/workflows/scorecard.yml` produce scoring
+  supply-chain settimanale + su push a `main`, pubblicato su code-scanning e
+  sull'API OpenSSF (repo pubblico).
 - `zizmor` esegue scan statico dei workflow.
 - `template-validation` esegue actionlint e parse YAML/JSON.
 - `AI SDLC Governance` valida inventario, eval, CODEOWNERS e control matrix.
@@ -26,16 +35,18 @@ provenance utile è di tipo source/control:
 - commit SHA dei caller verso il reusable;
 - `skills_ref` pinnato quando una skill deve essere caricata da un ref specifico;
 - CODEOWNERS per modifiche a control plane;
-- AI-BOM aggiornato;
+- AI-BOM e actions-BOM aggiornati e validati in CI;
+- score OpenSSF Scorecard pubblicato (badge in README);
 - required checks su governance/template/zizmor.
 
 ## Roadmap corta
 
 1. Rendere required check: `AI SDLC Governance`, `Template Validation`,
-   `Zizmor Workflow Scan`.
-2. Abilitare OpenSSF Scorecard a livello org/repo quando disponibile con token
-   e SARIF policy.
-3. Passare `harden-runner` da `audit` a `block` su read-only agents dopo due
-   settimane di endpoint osservati.
-4. Sostituire `MASTER_BOARD_TOKEN` con GitHub App token short-lived.
-5. Validare WIF Claude su sandbox e rimuovere progressivamente token OAuth.
+   `Zizmor Workflow Scan`, `Scorecard Supply-Chain Security`.
+2. Passare `harden-runner` da `audit` a `block` su read-only agents dopo due
+   settimane di endpoint osservati (AISEC-02).
+3. Sostituire `MASTER_BOARD_TOKEN` con GitHub App token short-lived (AIID-01).
+4. Validare WIF Claude su sandbox e rimuovere progressivamente token OAuth
+   (AIID-01).
+5. Valutare SLSA provenance / artifact attestation quando esisterà un artefatto
+   buildato da attestare, es. un bundle di skill (AISUP-05).

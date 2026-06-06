@@ -54,9 +54,10 @@
       "id": "AISEC-02",
       "title": "Egress monitoring with block-ready central configuration",
       "standards": ["OWASP Agentic ASI05", "OWASP Agentic Skills AST09"],
-      "status": "implemented",
+      "status": "partial",
       "owner": "Platform",
-      "evidence": [".github/workflows/agent-runner.yml", "docs/THREAT-MODEL-AGENTS.md"]
+      "evidence": [".github/workflows/agent-runner.yml", "docs/THREAT-MODEL-AGENTS.md"],
+      "roadmap": "Capture real egress endpoints for ~2 weeks, then set egress_policy=block on read-only agents and tighten the central allowlist."
     },
     {
       "id": "AISEC-03",
@@ -70,9 +71,10 @@
       "id": "AIID-01",
       "title": "Short-lived identity migration path for Claude and GitHub integrations",
       "standards": ["OWASP Agentic ASI03", "NIST SSDF PO.5"],
-      "status": "implemented",
+      "status": "partial",
       "owner": "Platform",
-      "evidence": [".github/workflows/agent-runner.yml", "docs/SUPPLY-CHAIN.md"]
+      "evidence": [".github/workflows/agent-runner.yml", "docs/SUPPLY-CHAIN.md"],
+      "roadmap": "PoC a GitHub App token for the Master Board and chaining, then validate WIF/OIDC for Claude where the plan supports anthropic_federation_rule_id; retire static PATs."
     },
     {
       "id": "AIOBS-01",
@@ -81,6 +83,30 @@
       "status": "implemented",
       "owner": "Platform",
       "evidence": [".github/workflows/fleet-dashboard.yml", "docs/OBSERVABILITY.md"]
+    },
+    {
+      "id": "AISUP-03",
+      "title": "OpenSSF Scorecard supply-chain scoring",
+      "standards": ["OpenSSF Scorecard", "SLSA Source Track", "NIST SSDF PW.4"],
+      "status": "implemented",
+      "owner": "Platform",
+      "evidence": [".github/workflows/scorecard.yml"]
+    },
+    {
+      "id": "AISUP-04",
+      "title": "Action pin enforcement and provenance inventory (actions-BOM)",
+      "standards": ["OpenSSF Scorecard Pinned-Dependencies", "CycloneDX SBOM", "NIST SSDF PW.4"],
+      "status": "implemented",
+      "owner": "Platform",
+      "evidence": [".github/ai-sdlc/actions-bom.json", ".github/scripts/validate_ai_sdlc.py"]
+    },
+    {
+      "id": "AISUP-05",
+      "title": "SLSA provenance and signed attestations for templates and skills",
+      "standards": ["SLSA Build L2", "CycloneDX ML-BOM"],
+      "status": "planned",
+      "owner": "Platform",
+      "roadmap": "Evaluate GitHub artifact attestations and skill signing once a packaged build artifact (e.g. a skills bundle) exists to attest."
     }
   ]
 }

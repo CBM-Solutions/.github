@@ -23,6 +23,11 @@ REQUIRED_CODEOWNERS = [
     "workflow-templates/",
     "CLAUDE.md",
 ]
+# Directories whose workflow YAML must keep every `uses:` SHA-pinned.
+WORKFLOW_DIRS = [".github/workflows", "workflow-templates"]
+VALID_CONTROL_STATUS = {"implemented", "partial", "planned"}
+SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+USES_RE = re.compile(r"^\s*-?\s*uses:\s*(\S+)")
 
 
 def fail(message: str) -> None:
@@ -37,6 +42,27 @@ def read(path: str) -> str:
 def load_json(path: str) -> dict:
     with (ROOT / path).open(encoding="utf-8") as handle:
         return json.load(handle)
+
+
+def iter_uses():
+    """Yield (relpath, lineno, action, ref) for every non-comment `uses:` line
+    in the workflow directories. Local (`./...`) references yield ref=None."""
+    for directory in WORKFLOW_DIRS:
+        for path in sorted((ROOT / directory).glob("*.yml")):
+            for lineno, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                if raw.lstrip().startswith("#"):
+                    continue
+                match = USES_RE.match(raw)
+                if not match:
+                    continue
+                token = match.group(1)
+                if token.startswith("./"):
+                    yield path.relative_to(ROOT).as_posix(), lineno, token, None
+                elif "@" in token:
+                    action, ref = token.rsplit("@", 1)
+                    yield path.relative_to(ROOT).as_posix(), lineno, action, ref
+                else:
+                    yield path.relative_to(ROOT).as_posix(), lineno, token, ""
 
 
 def agent_names_from_skills() -> set[str]:
@@ -124,6 +150,37 @@ def validate_evals(agents: set[str]) -> None:
             fail(f"missing eval categories for {agent}: required={sorted(required_categories)} actual={sorted(categories)}")
 
 
+def validate_pins() -> set[tuple[str, str]]:
+    """Every third-party/reusable `uses:` must be pinned to a 40-hex commit SHA.
+    Returns the set of (action, sha) pairs actually used."""
+    used: set[tuple[str, str]] = set()
+    for relpath, lineno, action, ref in iter_uses():
+        if ref is None:  # local action, no pin needed
+            continue
+        if not SHA_RE.match(ref):
+            fail(f"unpinned action (must be 40-hex SHA) at {relpath}:{lineno}: {action}@{ref or '<missing>'}")
+        used.add((action, ref))
+    return used
+
+
+def validate_actions_bom(used: set[tuple[str, str]]) -> None:
+    """Bidirectional parity between the pinned actions in the workflows and the
+    actions-BOM inventory, so the provenance list cannot silently drift."""
+    bom = load_json(".github/ai-sdlc/actions-bom.json")
+    listed: set[tuple[str, str]] = set()
+    for component in bom["components"]:
+        pair = (component["action"], component["sha"])
+        if pair in listed:
+            fail(f"duplicate actions-BOM component: {pair[0]}@{pair[1]}")
+        listed.add(pair)
+    missing = used - listed
+    if missing:
+        fail(f"actions-BOM missing pinned actions: {sorted(missing)}")
+    stale = listed - used
+    if stale:
+        fail(f"actions-BOM lists actions no longer used: {sorted(stale)}")
+
+
 def validate_controls() -> None:
     matrix = load_json(".github/ai-sdlc/control-matrix.json")
     ids: set[str] = set()
@@ -131,10 +188,15 @@ def validate_controls() -> None:
         if control["id"] in ids:
             fail(f"duplicate control id: {control['id']}")
         ids.add(control["id"])
-        if control["status"] != "implemented":
-            fail(f"control is not implemented: {control['id']} status={control['status']}")
+        status = control["status"]
+        if status not in VALID_CONTROL_STATUS:
+            fail(f"invalid control status: {control['id']} status={status}")
         if not control.get("standards"):
             fail(f"control missing standards: {control['id']}")
+        if status in {"implemented", "partial"} and not control.get("evidence"):
+            fail(f"control needs current evidence: {control['id']} status={status}")
+        if status in {"partial", "planned"} and not control.get("roadmap"):
+            fail(f"control needs a roadmap for its gap: {control['id']} status={status}")
         for evidence in control.get("evidence", []):
             if not (ROOT / evidence).exists():
                 fail(f"missing evidence for {control['id']}: {evidence}")
@@ -150,9 +212,14 @@ def validate_codeowners() -> None:
 def main() -> None:
     agents = validate_inventory()
     validate_evals(agents)
+    used_actions = validate_pins()
+    validate_actions_bom(used_actions)
     validate_controls()
     validate_codeowners()
-    print(f"AI SDLC validation passed for {len(agents)} agents.")
+    print(
+        f"AI SDLC validation passed for {len(agents)} agents "
+        f"and {len(used_actions)} pinned actions."
+    )
 
 
 if __name__ == "__main__":

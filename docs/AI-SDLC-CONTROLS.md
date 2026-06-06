@@ -23,11 +23,17 @@ La fonte di verità è `.github/ai-sdlc/control-matrix.json`.
 |---|---|---|
 | Governance | Registro controlli AI SDLC con owner e standard mapping | `.github/ai-sdlc/control-matrix.json` |
 | Threat model | Trust boundary, asset, failure mode e mitigazioni agentiche | `docs/THREAT-MODEL-AGENTS.md` |
-| Eval | Casi baseline + prompt-injection per ogni skill | `.github/ai-sdlc/evals.json` |
+| Eval | Casi baseline + prompt-injection + refusal per ogni skill | `.github/ai-sdlc/evals.json` |
 | Inventory | AI-BOM della flotta agenti, skill, template e secret | `.github/ai-sdlc/ai-bom.json` |
+| Provenance | Actions-BOM con SHA + pin enforcement in CI | `.github/ai-sdlc/actions-bom.json` |
+| Scorecard | Scoring supply-chain OpenSSF su code-scanning + API | `.github/workflows/scorecard.yml` |
 | Policy | CODEOWNERS su workflow, skills, template e governance docs | `.github/CODEOWNERS` |
 | CI gate | Validator statico senza dipendenze esterne | `.github/workflows/ai-sdlc-governance.yml` |
 | Supply chain | Pin SHA, zizmor, template validation, migration path token | `docs/SUPPLY-CHAIN.md` |
+
+Lo stato di ogni controllo è `implemented`, `partial` (con `roadmap` per il gap
+residuo) o `planned`. Il validator richiede evidenza per implemented/partial e
+una roadmap per partial/planned, così la matrice non può sovrastimare lo stato.
 
 ## Regola di modifica
 
