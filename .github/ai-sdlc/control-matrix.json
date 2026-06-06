@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "updated": "2026-06-06",
+  "controls": [
+    {
+      "id": "AIGOV-01",
+      "title": "AI risk register and control ownership",
+      "standards": ["NIST AI RMF Govern", "NIST AI RMF Manage", "NIST AI 600-1"],
+      "status": "implemented",
+      "owner": "Platform",
+      "evidence": ["docs/AI-SDLC-CONTROLS.md", ".github/ai-sdlc/control-matrix.json"]
+    },
+    {
+      "id": "AIGOV-02",
+      "title": "Agent threat model mapped to agentic and LLM risks",
+      "standards": ["OWASP LLM Top 10 2025", "OWASP Agentic Top 10 2026", "OWASP Agentic Skills Top 10"],
+      "status": "implemented",
+      "owner": "AppSec",
+      "evidence": ["docs/THREAT-MODEL-AGENTS.md", "workflow-templates/CLAUDE.md"]
+    },
+    {
+      "id": "AIEVAL-01",
+      "title": "Offline eval registry for every agent skill",
+      "standards": ["NIST AI RMF Measure", "NIST AI 600-1"],
+      "status": "implemented",
+      "owner": "Platform",
+      "evidence": [".github/ai-sdlc/evals.json", "docs/AGENT-EVALS.md", ".github/scripts/validate_ai_sdlc.py"]
+    },
+    {
+      "id": "AISUP-01",
+      "title": "Agent and workflow inventory for AI-BOM style traceability",
+      "standards": ["CycloneDX ML-BOM", "SLSA Source Track", "NIST SSDF PO.1"],
+      "status": "implemented",
+      "owner": "Platform",
+      "evidence": [".github/ai-sdlc/ai-bom.json", "docs/SUPPLY-CHAIN.md"]
+    },
+    {
+      "id": "AISUP-02",
+      "title": "Pinned actions and workflow static analysis",
+      "standards": ["SLSA Source Track", "OpenSSF Scorecard", "NIST SSDF PW.4"],
+      "status": "implemented",
+      "owner": "Platform",
+      "evidence": [".github/workflows/template-validation.yml", ".github/workflows/zizmor-scan.yml"]
+    },
+    {
+      "id": "AISEC-01",
+      "title": "Prompt-injection and tool misuse guardrails",
+      "standards": ["OWASP LLM01", "OWASP Agentic ASI01", "OWASP Agentic ASI02"],
+      "status": "implemented",
+      "owner": "AppSec",
+      "evidence": [".github/workflows/agent-runner.yml", "workflow-templates/CLAUDE.md", ".claude/skills/agent-security/SKILL.md"]
+    },
+    {
+      "id": "AISEC-02",
+      "title": "Egress monitoring with block-ready central configuration",
+      "standards": ["OWASP Agentic ASI05", "OWASP Agentic Skills AST09"],
+      "status": "implemented",
+      "owner": "Platform",
+      "evidence": [".github/workflows/agent-runner.yml", "docs/THREAT-MODEL-AGENTS.md"]
+    },
+    {
+      "id": "AISEC-03",
+      "title": "Human review ownership for high-risk agent assets",
+      "standards": ["OWASP Agentic Skills AST09", "NIST AI RMF Govern"],
+      "status": "implemented",
+      "owner": "Platform",
+      "evidence": [".github/CODEOWNERS"]
+    },
+    {
+      "id": "AIID-01",
+      "title": "Short-lived identity migration path for Claude and GitHub integrations",
+      "standards": ["OWASP Agentic ASI03", "NIST SSDF PO.5"],
+      "status": "implemented",
+      "owner": "Platform",
+      "evidence": [".github/workflows/agent-runner.yml", "docs/SUPPLY-CHAIN.md"]
+    },
+    {
+      "id": "AIOBS-01",
+      "title": "Fleet-level operational telemetry",
+      "standards": ["NIST AI RMF Measure", "NIST AI RMF Manage"],
+      "status": "implemented",
+      "owner": "Platform",
+      "evidence": [".github/workflows/fleet-dashboard.yml", "docs/OBSERVABILITY.md"]
+    }
+  ]
+}

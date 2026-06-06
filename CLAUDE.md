@@ -31,6 +31,10 @@ server, niente sempre-acceso.
   linter o test per "far passare" il commit.
 - **Scope minimo**: tocca solo ciò che serve al task. Niente refactor a sorpresa,
   niente upgrade di dipendenze non richiesti, niente nuove astrazioni non chieste.
+- **Control plane AI SDLC**: workflow, Agent Skills, `CLAUDE.md`, template e file
+  in `.github/ai-sdlc/` sono asset critici. Se li modifichi, aggiorna inventario,
+  eval e documentazione collegata; devono passare i gate AI SDLC Governance,
+  Template Validation e Zizmor.
 
 ## Come lavorare
 

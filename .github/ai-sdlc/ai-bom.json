@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "updated": "2026-06-06",
+  "system": "CBM-Solutions GitHub Actions Claude agent fleet",
+  "reusable_runner": ".github/workflows/agent-runner.yml",
+  "grounding_template": "workflow-templates/CLAUDE.md",
+  "agents": [
+    {"name": "fix", "label": "agent:fix", "skill": ".claude/skills/agent-fix/SKILL.md", "template": "workflow-templates/agent-fix.yml", "opens_pr": true},
+    {"name": "feature", "label": "agent:feature", "skill": ".claude/skills/agent-feature/SKILL.md", "template": "workflow-templates/agent-feature.yml", "opens_pr": true},
+    {"name": "review", "label": "agent:review", "skill": ".claude/skills/agent-review/SKILL.md", "template": "workflow-templates/agent-review.yml", "opens_pr": false},
+    {"name": "docs", "label": "agent:docs", "skill": ".claude/skills/agent-docs/SKILL.md", "template": "workflow-templates/agent-docs.yml", "opens_pr": true},
+    {"name": "test", "label": "agent:test", "skill": ".claude/skills/agent-test/SKILL.md", "template": "workflow-templates/agent-test.yml", "opens_pr": true},
+    {"name": "refactor", "label": "agent:refactor", "skill": ".claude/skills/agent-refactor/SKILL.md", "template": "workflow-templates/agent-refactor.yml", "opens_pr": true},
+    {"name": "summary", "label": "agent:summary", "skill": ".claude/skills/agent-summary/SKILL.md", "template": "workflow-templates/agent-summary.yml", "opens_pr": false},
+    {"name": "security", "label": "agent:security", "skill": ".claude/skills/agent-security/SKILL.md", "template": "workflow-templates/agent-security.yml", "opens_pr": false},
+    {"name": "cicd", "label": "agent:cicd", "skill": ".claude/skills/agent-cicd/SKILL.md", "template": "workflow-templates/agent-cicd.yml", "opens_pr": true},
+    {"name": "iac", "label": "agent:iac", "skill": ".claude/skills/agent-iac/SKILL.md", "template": "workflow-templates/agent-iac.yml", "opens_pr": false},
+    {"name": "maintain", "label": "agent:maintain", "skill": ".claude/skills/agent-maintain/SKILL.md", "template": "workflow-templates/agent-maintain.yml", "opens_pr": true}
+  ],
+  "secrets": [
+    {"name": "CLAUDE_CODE_OAUTH_TOKEN", "scope": "repo secret", "used_by": "claude-code-action", "migration": "anthropic_federation_rule_id / WIF when available"},
+    {"name": "MASTER_BOARD_TOKEN", "scope": "repo secret", "used_by": "project board, optional chaining", "migration": "GitHub App token or short-lived fine-grained PAT"}
+  ],
+  "security_workflows": [
+    ".github/workflows/template-validation.yml",
+    ".github/workflows/zizmor-scan.yml",
+    ".github/workflows/ai-sdlc-governance.yml"
+  ]
+}

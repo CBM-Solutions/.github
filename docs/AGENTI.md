@@ -5,7 +5,7 @@ Documento di riferimento per consultazione quotidiana. Per l'onboarding e la pri
 ## Indice
 
 - [Architettura in 30 secondi](#architettura-in-30-secondi)
-- [I 10 agenti in dettaglio](#i-10-agenti-in-dettaglio)
+- [Gli 11 agenti in dettaglio](#gli-11-agenti-in-dettaglio)
 - [Come scrivere una buona issue per un agente](#come-scrivere-una-buona-issue-per-un-agente)
 - [Comportamenti automatici](#comportamenti-automatici)
 - [Limiti, costi, performance](#limiti-costi-performance)
@@ -392,7 +392,7 @@ Se vedi comportamento anomalo da un agente:
 │   ├── SETUP-NUOVO-REPO.md              ← attivare gli agenti su un repo
 │   └── COSTI.md                         ← report consumi
 ├── .claude/skills/                      ← prompt come Agent Skills (Fase 7D)
-│   └── agent-<nome>/SKILL.md            ← metodologia di ogni agente (10)
+│   └── agent-<nome>/SKILL.md            ← metodologia di ogni agente (11)
 ├── .github/workflows/
 │   ├── agent-runner.yml                 ← REUSABLE centralizzato (logica comune + pin SHA + load skills)
 │   ├── zizmor-scan.yml                  ← scanner sicurezza workflow
@@ -401,6 +401,7 @@ Se vedi comportamento anomalo da un agente:
 ├── workflow-templates/                  ← starter per i repo della org (thin caller)
 │   ├── CLAUDE.md                        ← grounding (da copiare nella root del repo)
 │   ├── agent-fix.yml + .properties.json
+│   ├── agent-feature.yml + .properties.json
 │   ├── agent-review.yml
 │   ├── agent-docs.yml
 │   ├── agent-test.yml
@@ -410,7 +411,7 @@ Se vedi comportamento anomalo da un agente:
 │   ├── agent-cicd.yml
 │   ├── agent-iac.yml
 │   ├── agent-maintain.yml
-│   ├── labels-bootstrap.yml             ← crea le 10 label
+│   ├── labels-bootstrap.yml             ← crea le 11 label
 │   ├── labels.yml                       ← definizione dichiarativa
 │   ├── notify-on-failure.yml            ← alert Telegram
 │   └── zizmor-scan.yml                  ← adottabile per-repo

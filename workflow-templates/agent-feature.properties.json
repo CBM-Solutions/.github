@@ -1,0 +1,6 @@
+{
+  "name": "Agent Feature (Claude)",
+  "description": "Pianifica una funzionalità, apre una PR core e decompone i task specialistici quando una issue riceve l'etichetta agent:feature.",
+  "iconName": "octicon-project-symlink",
+  "categories": ["Automation"]
+}
