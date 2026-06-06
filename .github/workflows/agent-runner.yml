@@ -70,10 +70,31 @@ on:
         type: boolean
         required: false
         default: false
+      egress_policy:
+        description: "Policy step-security/harden-runner: audit per compatibilità, block quando l'allowlist è pronta."
+        type: string
+        required: false
+        default: "audit"
+      egress_allowed_endpoints:
+        description: Allowlist harden-runner usata quando egress_policy=block.
+        type: string
+        required: false
+        default: |
+          api.anthropic.com:443
+          api.github.com:443
+          github.com:443
+          codeload.github.com:443
+          objects.githubusercontent.com:443
+          raw.githubusercontent.com:443
+      anthropic_federation_rule_id:
+        description: "Federation rule Anthropic per auth OIDC/WIF short-lived. Vuoto = usa CLAUDE_CODE_OAUTH_TOKEN."
+        type: string
+        required: false
+        default: ""
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN:
-        description: Token OAuth dell'abbonamento Claude Max.
-        required: true
+        description: Token OAuth dell'abbonamento Claude Max. Opzionale se anthropic_federation_rule_id è configurato.
+        required: false
       MASTER_BOARD_TOKEN:
         description: PAT con scope project per scrivere sul Master Board.
         required: false
@@ -92,10 +113,11 @@ jobs:
       # (api.anthropic.com, github.com, registry pkg) e poi passeremo a "block".
       # Difesa di rete che i --disallowedTools da soli non coprono (lethal trifecta).
       # Deve restare il PRIMO step per intercettare l'intero traffico del job.
-      - name: Harden runner (egress audit)
+      - name: Harden runner (egress policy)
         uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
         with:
-          egress-policy: audit
+          egress-policy: ${{ inputs.egress_policy }}
+          allowed-endpoints: ${{ inputs.egress_allowed_endpoints }}
 
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
@@ -147,6 +169,7 @@ jobs:
         uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1.0.133
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_federation_rule_id: ${{ inputs.anthropic_federation_rule_id }}
           claude_args: ${{ steps.args.outputs.value }}
           prompt: ${{ inputs.prompt }}
 
@@ -162,6 +185,7 @@ jobs:
         uses: anthropics/claude-code-action@787c5a0ce96a9a6cfb050ea0c8f4c05f2447c251 # v1.0.133
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_federation_rule_id: ${{ inputs.anthropic_federation_rule_id }}
           claude_args: ${{ steps.args.outputs.value }}
           prompt: ${{ inputs.prompt }}
 

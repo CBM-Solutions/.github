@@ -1,0 +1,12 @@
+# AI SDLC control plane: workflow, agent skill, template and governance changes
+# require human review from the org maintainers.
+/.github/workflows/ @montafra @K0enjy @Belletz-28
+/.github/scripts/ @montafra @K0enjy @Belletz-28
+/.github/ai-sdlc/ @montafra @K0enjy @Belletz-28
+/.claude/skills/ @montafra @K0enjy @Belletz-28
+/workflow-templates/ @montafra @K0enjy @Belletz-28
+/CLAUDE.md @montafra @K0enjy @Belletz-28
+/docs/AI-SDLC-CONTROLS.md @montafra @K0enjy @Belletz-28
+/docs/THREAT-MODEL-AGENTS.md @montafra @K0enjy @Belletz-28
+/docs/AGENT-EVALS.md @montafra @K0enjy @Belletz-28
+/docs/SUPPLY-CHAIN.md @montafra @K0enjy @Belletz-28

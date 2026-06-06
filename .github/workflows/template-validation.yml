@@ -53,3 +53,6 @@ jobs:
                   json.load(handle)
               print(f"ok {path}")
           PY
+
+      - name: Validate AI SDLC inventory
+        run: python .github/scripts/validate_ai_sdlc.py

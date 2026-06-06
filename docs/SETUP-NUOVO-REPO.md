@@ -86,7 +86,7 @@ Per far partire la code review automaticamente dopo che `agent:fix`/`agent:docs`
 
 1. **Actions → Bootstrap Agent Labels → Run workflow → Run**.
 2. Attendi che termini (10-20 secondi).
-3. Verifica su **Issues → Labels** che ci siano 10 nuove label colorate `agent:fix`, `agent:review`, ecc.
+3. Verifica su **Issues → Labels** che ci siano 11 nuove label colorate `agent:fix`, `agent:feature`, `agent:review`, ecc.
 
 ---
 

@@ -1,0 +1,42 @@
+name: AI SDLC Governance
+
+on:
+  pull_request:
+    paths:
+      - ".github/ai-sdlc/**"
+      - ".github/scripts/**"
+      - ".github/workflows/**"
+      - ".claude/skills/**"
+      - "workflow-templates/**"
+      - "docs/AI-SDLC-CONTROLS.md"
+      - "docs/THREAT-MODEL-AGENTS.md"
+      - "docs/AGENT-EVALS.md"
+      - "docs/SUPPLY-CHAIN.md"
+      - ".github/CODEOWNERS"
+      - "CLAUDE.md"
+  push:
+    branches: [main]
+    paths:
+      - ".github/ai-sdlc/**"
+      - ".github/scripts/**"
+      - ".github/workflows/**"
+      - ".claude/skills/**"
+      - "workflow-templates/**"
+      - "docs/AI-SDLC-CONTROLS.md"
+      - "docs/THREAT-MODEL-AGENTS.md"
+      - "docs/AGENT-EVALS.md"
+      - "docs/SUPPLY-CHAIN.md"
+      - ".github/CODEOWNERS"
+      - "CLAUDE.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - name: Validate AI SDLC controls
+        run: python3 .github/scripts/validate_ai_sdlc.py
