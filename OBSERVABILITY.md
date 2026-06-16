@@ -1,6 +1,6 @@
 # 📊 Fleet Dashboard — trend agenti Claude
 
-_Generato: 2026-06-15 21:38 CEST (UTC 19:38) · org `CBM-Solutions` · finestra 180 giorni_
+_Generato: 2026-06-16 21:29 CEST (UTC 19:29) · org `CBM-Solutions` · finestra 180 giorni_
 
 ## Riepilogo finestra (180 giorni)
 
