@@ -43,8 +43,8 @@ provenance utile è di tipo source/control:
 
 1. Rendere required check: `AI SDLC Governance`, `Template Validation`,
    `Zizmor Workflow Scan`, `Scorecard Supply-Chain Security`.
-2. Passare `harden-runner` da `audit` a `block` su read-only agents dopo due
-   settimane di endpoint osservati (AISEC-02).
+2. Estendere `harden-runner` `block` (già attivo sui read-only agents) anche ai
+   PR-creator dopo aver profilato il loro egress più ampio (AISEC-02).
 3. Sostituire `MASTER_BOARD_TOKEN` con GitHub App token short-lived (AIID-01).
 4. Validare WIF Claude su sandbox e rimuovere progressivamente token OAuth
    (AIID-01).

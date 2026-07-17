@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated": "2026-06-06",
+  "updated": "2026-07-17",
   "controls": [
     {
       "id": "AIGOV-01",
@@ -56,8 +56,8 @@
       "standards": ["OWASP Agentic ASI05", "OWASP Agentic Skills AST09"],
       "status": "partial",
       "owner": "Platform",
-      "evidence": [".github/workflows/agent-runner.yml", "docs/THREAT-MODEL-AGENTS.md"],
-      "roadmap": "Capture real egress endpoints for ~2 weeks, then set egress_policy=block on read-only agents and tighten the central allowlist."
+      "evidence": [".github/workflows/agent-runner.yml", "workflow-templates/agent-review.yml", "workflow-templates/agent-security.yml", "workflow-templates/agent-iac.yml", "workflow-templates/agent-summary.yml", "docs/THREAT-MODEL-AGENTS.md"],
+      "roadmap": "Read-only agents (review/security/iac/summary) now enforce egress_policy=block on the central Anthropic+GitHub allowlist; monitor the first block-mode runs via harden-runner annotations, then extend block to PR-creator agents once their wider egress (package registries, test/build) is profiled and the allowlist tightened."
     },
     {
       "id": "AISEC-03",

@@ -1,0 +1,67 @@
+name: Notify Ops Failure
+# Notifica su Telegram i fallimenti dei workflow org-ops di QUESTO repo (.github):
+# Fleet Dashboard, AI SDLC Governance, Template Validation, Zizmor, Scorecard.
+# Non essendo "Agent *", non sono coperti da notify-on-failure (quello vive nei
+# repo target e osserva gli agenti). Uso sicuro di workflow_run: NON fa checkout
+# di codice né esegue input non fidato; legge solo metadati della run e invia una
+# notifica, con permessi nulli. Per questo il trigger è accettato esplicitamente.
+on:
+  workflow_run: # zizmor: ignore[dangerous-triggers]
+    workflows:
+      - "Fleet Dashboard"
+      - "AI SDLC Governance"
+      - "Template Validation"
+      - "Zizmor Workflow Scan"
+      - "Scorecard Supply-Chain Security"
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Send Telegram notification
+        env:
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WF_NAME: ${{ github.event.workflow_run.name }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          ACTIONS_URL: ${{ github.server_url }}/${{ github.repository }}/actions
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          ACTOR: ${{ github.event.workflow_run.triggering_actor.login }}
+          EVENT: ${{ github.event.workflow_run.event }}
+        run: |
+          if [ -z "$BOT_TOKEN" ] || [ -z "$CHAT_ID" ]; then
+            echo "::warning::TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID non configurati, salto notifica"
+            exit 0
+          fi
+          NOW=$(date -u +'%Y-%m-%d %H:%M UTC')
+          # Newline reali + parse_mode HTML (robusto con _ nei nomi di branch/utente).
+          MESSAGE=$(cat <<EOF
+          🛠️ <b>${WF_NAME}</b> — run org-ops fallita
+
+          📦 Repo: <code>${REPO}</code>
+          🌿 Branch: <code>${BRANCH}</code>
+          ⚡ Evento: <code>${EVENT}</code>
+          👤 Avviato da: ${ACTOR}
+          🕒 ${NOW}
+
+          Apri i log per la causa. Se è il Fleet Dashboard on-demand, rilancialo da Actions.
+          EOF
+          )
+          # Inline keyboard con URL-button (serverless: nessun callback/listener)
+          KEYBOARD=$(printf '{"inline_keyboard":[[{"text":"🔴 Apri run","url":"%s"},{"text":"📋 Actions","url":"%s"}]]}' \
+            "$RUN_URL" "$ACTIONS_URL")
+          curl -sS --fail-with-body \
+            "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${CHAT_ID}" \
+            --data-urlencode "parse_mode=HTML" \
+            --data-urlencode "disable_web_page_preview=true" \
+            --data-urlencode "text=${MESSAGE}" \
+            --data-urlencode "reply_markup=${KEYBOARD}"

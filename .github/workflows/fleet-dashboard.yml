@@ -10,11 +10,16 @@ name: Fleet Dashboard
 #   - TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID : opzionali (se assenti, salta l'invio)
 
 on:
-  schedule:
-    # 16:00 UTC = 18:00 ora italiana estiva (CEST). In inverno (CET) sono le 17:00:
-    # il cron di GitHub è in UTC e NON gestisce il DST. Per ancorare le 18:00 all'ora
-    # solare invernale, usare "0 17 * * *".
-    - cron: "0 16 * * *"
+  # Daily SOSPESO (2026-07-16): il report non è ancora scalato a tutte le repo per
+  # via della ristrutturazione del team. Il dashboard resta comunque disponibile
+  # on-demand via workflow_dispatch (Actions → Fleet Dashboard → Run workflow).
+  # Per riattivare il giro automatico, togliere il commento allo `schedule` sotto.
+  #
+  # schedule:
+  #   # 16:00 UTC = 18:00 ora italiana estiva (CEST). In inverno (CET) sono le 17:00:
+  #   # il cron di GitHub è in UTC e NON gestisce il DST. Per ancorare le 18:00 all'ora
+  #   # solare invernale, usare "0 17 * * *".
+  #   - cron: "0 16 * * *"
   workflow_dispatch:
 
 permissions:
@@ -30,6 +35,9 @@ jobs:
     env:
       ORG: CBM-Solutions
       GH_TOKEN: ${{ secrets.MASTER_BOARD_TOKEN }}
+      # Lista opzionale di NOMI repo (CSV o a capo/spazi, senza owner) da scansionare.
+      # Vuota = intera org. Utile finché il report non è scalato a tutte le repo.
+      FLEET_REPOS: ${{ vars.FLEET_REPOS }}
       WINDOW_DAYS: "180"     # storico raccolto: serve a costruire i trend mensili
       DAYS_SHOWN: "14"       # righe nella tabella trend per giorno
       WEEKS_SHOWN: "12"      # righe nella tabella trend per settimana (ISO)
@@ -45,7 +53,15 @@ jobs:
           OUT=OBSERVABILITY.md
           TMP=$(mktemp -d)
 
-          repos=$(gh repo list "$ORG" --no-archived --limit 200 --json name --jq '.[].name')
+          # Scope repo: se FLEET_REPOS è valorizzata usa quella lista (scoping manuale),
+          # altrimenti fallback all'intera org (no-archived).
+          if [ -n "${FLEET_REPOS:-}" ]; then
+            repos=$(printf '%s' "$FLEET_REPOS" | tr ',[:space:]' '\n' | grep -v '^$' || true)
+            echo "Repo scope: lista esplicita FLEET_REPOS"
+          else
+            repos=$(gh repo list "$ORG" --no-archived --limit 200 --json name --jq '.[].name')
+            echo "Repo scope: intera org $ORG (no-archived)"
+          fi
 
           # repo \t agent \t conclusion \t duration_s \t day(YYYY-MM-DD)
           : > "$TMP/rows.tsv"
@@ -160,7 +176,7 @@ jobs:
               c["Agent Summary"]=0.02; c["Agent Review"]=0.15; c["Agent Security"]=0.20;
               c["Agent Fix"]=0.10; c["Agent Docs"]=0.07; c["Agent Test"]=0.20;
               c["Agent Refactor"]=0.14; c["Agent CICD"]=0.14; c["Agent IaC"]=0.10;
-              c["Agent Maintain"]=0.17;
+              c["Agent Maintain"]=0.17; c["Agent Feature"]=0.25;
             }
             $3!="skipped"{ t += (($2 in c)?c[$2]:0.10) }
             END{ printf "%.2f", t+0 }' "$TMP/rows.tsv")
@@ -214,7 +230,7 @@ jobs:
               c["Agent Summary"]=0.02; c["Agent Review"]=0.15; c["Agent Security"]=0.20;
               c["Agent Fix"]=0.10; c["Agent Docs"]=0.07; c["Agent Test"]=0.20;
               c["Agent Refactor"]=0.14; c["Agent CICD"]=0.14; c["Agent IaC"]=0.10;
-              c["Agent Maintain"]=0.17;
+              c["Agent Maintain"]=0.17; c["Agent Feature"]=0.25;
             }
             $3!="skipped" {
               cnt[$2]++; if($3=="success")s[$2]++; if($3=="failure")f[$2]++; dur[$2]+=$4;

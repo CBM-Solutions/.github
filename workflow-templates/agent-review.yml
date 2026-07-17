@@ -27,6 +27,9 @@ jobs:
       fetch_depth: 0
       enable_retry: true
       use_skills: true
+      # AISEC-02: egress in block (read-only). Allowlist centrale = Anthropic + GitHub.
+      # Rollback rapido: block → audit. I domini di sola telemetria bloccati non sono fatali.
+      egress_policy: block
       allowed_tools: "Read,Glob,Grep,Bash(gh issue comment:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh issue view:*),Bash(git log:*),Bash(git diff:*),Bash(git show:*)"
       prompt: |
         /agent-review
