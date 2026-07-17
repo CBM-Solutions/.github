@@ -56,7 +56,7 @@ Dati misurati sul repo `agent-sandbox` durante validazione iniziale.
 
 ## Quando vale la pena cambiare modello
 
-Default action: **Claude Sonnet 4.6**.
+Modello di default per il coding (pinnato esplicitamente per agente): **Claude Sonnet 5**.
 
 Dalla Fase 7 il modello si imposta con l'input `model:` del caller (il reusable `agent-runner.yml` lo passa a `--model` solo se valorizzato):
 ```yaml
@@ -68,10 +68,10 @@ with:
 | Modello | Quando preferirlo |
 |---|---|
 | `claude-haiku-4-5` | `summary`, `review` su PR piccole, task ripetitivi a basso valore |
-| `claude-sonnet-4-6` (default) | `fix`, `docs`, `test`, `refactor` — best balance |
+| `claude-sonnet-5` | `fix`, `docs`, `test`, `refactor` — best balance |
 | `claude-opus-4-8` | `review`, `security`, cambi architetturali, debug complessi, una tantum |
 
-**Raccomandazione attuale:** lasciare i PR-creator su Sonnet 4.6, `summary` su Haiku e `review`/`security` su Opus fino a quando i run non superano 50/mese. Sotto quella soglia il margine sui rate limit del Max è ampio.
+**Raccomandazione attuale:** lasciare i PR-creator su Sonnet 5, `summary` su Haiku e `review`/`security` su Opus fino a quando i run non superano 50/mese. Sotto quella soglia il margine sui rate limit del Max è ampio.
 
 ---
 

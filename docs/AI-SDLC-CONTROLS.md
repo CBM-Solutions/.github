@@ -47,8 +47,9 @@ Ogni modifica a workflow, Agent Skills, `CLAUDE.md`, template o controlli deve:
 
 ## Residual risk accettato
 
-- `harden-runner` resta default `audit` per non rompere build/test eterogenei; il
-  reusable è già `block`-ready via input centralizzati.
+- `harden-runner` è in `block` sugli agenti read-only (review/security/iac/summary)
+  con allowlist centrale Anthropic+GitHub; resta `audit` sui PR-creator (build/test
+  eterogenei) finché il loro egress non è profilato. Reusable block-ready via input.
 - Il token Claude OAuth e il token board sono ancora compatibili con l'attuale
   setup Free/org; la migrazione a WIF/GitHub App token è descritta in
   `docs/SUPPLY-CHAIN.md` e supportata dal reusable dove tecnicamente possibile.

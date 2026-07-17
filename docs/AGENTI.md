@@ -273,7 +273,7 @@ Configurazione centralizzata nel reusable `agent-runner.yml` (override via varia
 
 ### Modello (selezione per agente)
 
-Default dell'action: **`claude-sonnet-4-6`**. Il modello si imposta per agente con l'input `model:` del caller (il reusable lo passa a `--model` solo se valorizzato):
+Ogni agente pinna esplicitamente il proprio modello con l'input `model:` del caller (niente dipendenza dal default dell'action; il reusable lo passa a `--model`):
 ```yaml
 # in workflow-templates/agent-<nome>.yml
 with:
@@ -286,7 +286,7 @@ Configurazione attuale dei template:
 | Modello | Agenti | Razionale |
 |---|---|---|
 | `claude-haiku-4-5` | `summary` | Task breve read-only, ~10× più economico |
-| `claude-sonnet-4-6` | `fix`, `docs`, `test`, `refactor`, `cicd`, `maintain`, `iac` | Best balance qualità/costo per coding |
+| `claude-sonnet-5` | `fix`, `docs`, `test`, `refactor`, `cicd`, `maintain`, `iac` | Best balance qualità/costo per coding |
 | `claude-opus-4-8` | `security`, `review`, `feature` | Recall su bug/vulnerabilità (security/review) e qualità di pianificazione/decomposizione (feature) |
 
 > Il parametro `effort` (es. `xhigh` per coding) è a livello API e non è esposto come flag CLI in `claude_args`; lo steering equivalente si ottiene via prompt e scelta del modello. Per i task dove serve più ragionamento, il modello Opus + prompt "ragiona attentamente prima di agire" è la leva.

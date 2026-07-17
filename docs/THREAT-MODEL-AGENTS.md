@@ -21,7 +21,7 @@ usano il reusable `.github/workflows/agent-runner.yml`; le metodologie vivono in
 |---|---|---|
 | Issue/PR body → prompt | testo utente, diff, commenti | write-access gate, skill guardrail, no interpolazione in `run:` |
 | Prompt → tool | richieste generate dal modello | `--allowedTools` per agente + `--disallowedTools` centrale |
-| Runner → rete | possibili canali di esfiltrazione | `harden-runner` audit/block-ready |
+| Runner → rete | possibili canali di esfiltrazione | `harden-runner` block (read-only) / audit (PR-creator) |
 | Skills/template → agent behavior | supply-chain interna | CODEOWNERS + eval registry + governance CI |
 | Token → integrazioni GitHub/Claude | credenziali statiche residue | secret espliciti, no `secrets: inherit`, migration path WIF/App token |
 
@@ -36,7 +36,7 @@ usano il reusable `.github/workflows/agent-runner.yml`; le metodologie vivono in
 | Context poisoning | contenuto repo/issue contiene istruzioni malevole | grounding tratta input come non fidato | aggiungere fixture più realistiche da incidenti interni |
 | Human trust exploitation | commento agente appare autorevole ma sbagliato | sezioni confidence/severity, review umana obbligatoria | dashboard su override-rate per agente |
 | Cascading multi-agent failure | `feature` propone task e specialisti amplificano errore | auto-fan-out disabilitato, chaining opt-in | token short-lived + policy prima di fan-out automatico |
-| Egress/exfiltration | output o rete usati per esfiltrare secret | harden-runner audit, disallowed curl/wget/env/cat | passaggio graduale a block allowlist |
+| Egress/exfiltration | output o rete usati per esfiltrare secret | harden-runner block (read-only) + audit (PR-creator), disallowed curl/wget/env/cat | estendere block ai PR-creator |
 
 ## Policy operativa
 
